@@ -20,7 +20,6 @@ const SymptomChecker = () => {
   const [additionalSymptoms, setAdditionalSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
   const [patientPincode, setPatientPincode] = useState('');
@@ -49,18 +48,21 @@ const SymptomChecker = () => {
       return;
     }
 
+    const combinedSymptoms = selectedSymptoms
+      .map((id) => commonSymptoms.find((s) => s.id === id)?.label)
+      .concat(additionalSymptoms ? [additionalSymptoms] : [])
+      .join(', ');
+
     try {
       const payload = {
         name: patientName,
         age: parseInt(patientAge),
-        symptoms: selectedSymptoms
-          .map((id) => commonSymptoms.find((s) => s.id === id)?.label)
-          .concat(additionalSymptoms ? [additionalSymptoms] : [])
-          .join(', '),
+        symptoms: combinedSymptoms,
         pincode: patientPincode
       };
 
-      const res = await fetch('http://localhost:8080/api/patient/submit-all', {
+      // Step 1: Save to backend
+      const backendRes = await fetch('http://localhost:8080/api/patient/submit-all', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -68,21 +70,49 @@ const SymptomChecker = () => {
         body: JSON.stringify(payload)
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        navigate('/symptom-results', {
-          state: {
-            analysis: data.analysis || {},
-            symptoms: {
-              selected: payload.symptoms,
-              additional: additionalSymptoms
-            }
-          }
-        });
-      } else {
-        const errMsg = await res.text();
+      if (!backendRes.ok) {
+        const errMsg = await backendRes.text();
         throw new Error(errMsg || 'Failed to submit data');
       }
+
+      // Step 2: Call ML model API
+      const mlRes = await fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ symptoms: combinedSymptoms })
+      });
+
+      if (!mlRes.ok) {
+        throw new Error('Failed to fetch prediction from ML model');
+      }
+
+      const mlData = await mlRes.json();
+      console.log('ML Prediction:', mlData); // Debug log
+
+      // Step 3: Navigate to results with ML data
+      navigate('/symptom-results', {
+        state: {
+          modelOutput: {
+            confidence: mlData.confidence,
+            input_symptoms: mlData.input_symptoms,
+            predicted_risk: mlData.predicted_risk,
+            recommend_doctor: mlData.recommend_doctor,
+            treatment: mlData.treatment
+          },
+          patientInfo: {
+            name: patientName,
+            age: patientAge,
+            pincode: patientPincode
+          },
+          selectedSymptoms: selectedSymptoms.map((id) =>
+            commonSymptoms.find((s) => s.id === id)?.label
+          ),
+          additionalSymptoms: additionalSymptoms
+        }
+      });
+
     } catch (err) {
       setError('An error occurred. Please try again.');
       console.error('Symptom check error:', err);
@@ -202,6 +232,7 @@ const SymptomChecker = () => {
                   </p>
                 </div>
 
+                {/* Submit Button */}
                 <div>
                   <button
                     type="submit"
@@ -250,6 +281,7 @@ const SymptomChecker = () => {
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
