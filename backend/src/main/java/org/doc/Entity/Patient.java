@@ -1,6 +1,9 @@
+// ===========================
+// Patient.java (Entity)
+// ===========================
 package org.doc.Entity;
 
-import jakarta.persistence.*; // Or use javax.persistence.* if on older Spring Boot
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "patients")
@@ -15,10 +18,14 @@ public class Patient {
     private String symptoms;
     private String pincode;
 
-    // Getters and setters
+    // Getters and Setters
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
