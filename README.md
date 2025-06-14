@@ -25,6 +25,73 @@ Copy
 Edit
 
 ---
+🛠️ Setting Up Spring Boot with Railway MySQL
+Your Spring Boot backend is configured to connect to a Railway-hosted MySQL database using the application.properties file.
+
+Here's the sample config used:
+
+properties
+Copy
+Edit
+# application.properties
+
+spring.application.name=Backend
+spring.datasource.url=jdbc:mysql://centerbeam.proxy.rlwy.net:24095/railway
+spring.datasource.username=root
+spring.datasource.password=SnZgpgkVyPNWPIDuFRotlDIxRaUBluyJ
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+⚠️ For New Users (Important):
+If you're cloning this project or deploying it yourself, you must replace these values with your own from Railway.
+
+🔐 Steps to Get Your Railway DB Credentials:
+Go to https://railway.app
+
+Open your Spring Boot backend project
+
+Click on the MySQL plugin
+
+Copy the following values:
+
+Database URL → Replace in spring.datasource.url
+
+Username → Replace in spring.datasource.username
+
+Password → Replace in spring.datasource.password
+
+Also note your Port (e.g. 24095)
+
+✅ Example After Your Changes:
+If your Railway DB info is like:
+
+Host: aws-123456.railway.internal
+
+Port: 12345
+
+DB Name: my_db
+
+Username: root
+
+Password: my_secure_pass
+
+Then update as:
+
+properties
+Copy
+Edit
+spring.datasource.url=jdbc:mysql://aws-123456.railway.internal:12345/my_db
+spring.datasource.username=root
+spring.datasource.password=my_secure_pass
+💡 Tips:
+Make sure your port is correct
+
+Railway usually assigns non-standard ports (not 3306)
+
+Keep .properties file secure if you're pushing code to GitHub
+
 
 ## 🚀 Running the Project with `start.sh`
 
