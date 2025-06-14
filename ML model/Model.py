@@ -1,7 +1,7 @@
-# %%
 # full_symptom_triage_api_with_risk.py
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # 🆕 ADD THIS
 import pandas as pd
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,9 +12,9 @@ import joblib
 import os
 
 # ------------------------------
-# Load dataset (adjusted for provided columns)
+# Load dataset
 # ------------------------------
-df = pd.read_csv("D:\DocAi-Scheduler\ML model\Diseases_Symptoms.csv")  # Make sure this file exists and has columns: Code, Name, Symptoms, Treatments
+df = pd.read_csv("D:\\DocAi-Scheduler\\ML model\\Diseases_Symptoms.csv")  # Make sure path & file exist
 
 # ------------------------------
 # CLEANING & RISK LABELING
@@ -29,15 +29,14 @@ df = df.dropna(subset=['Symptoms', 'Treatments'])
 df['Symptoms'] = df['Symptoms'].apply(clean_text)
 df['Treatments'] = df['Treatments'].apply(clean_text)
 
-# Add synthetic Risk column using keyword heuristics
 def classify_risk(symptoms):
     high_keywords = [
-    'chest pain', 'seizure', 'stroke', 'unconscious',
-    'shortness of breath', 'palpitation', 'bleeding',
-    'confusion', 'heart attack', 'cardiac arrest', 'tight chest','chestpain',
-    'shortnessofbreath','heartattack', 'cardiacarrest', 'tightchest'
-]
-
+        'chest pain', 'seizure', 'stroke', 'unconscious',
+        'shortness of breath', 'palpitation', 'bleeding',
+        'confusion', 'heart attack', 'cardiac arrest', 'tight chest',
+        'chestpain', 'shortnessofbreath', 'heartattack',
+        'cardiacarrest', 'tightchest'
+    ]
     for kw in high_keywords:
         if kw in symptoms:
             return 'HIGH'
@@ -65,6 +64,8 @@ joblib.dump(pipeline, "triage_model.pkl")
 # FLASK API
 # ------------------------------
 app = Flask(__name__)
+CORS(app)  # 🆕 ENABLE CORS (you can also use CORS(app, origins=["http://localhost:5173"]))
+
 model = joblib.load("triage_model.pkl")
 
 @app.route("/predict", methods=["POST"])
@@ -76,7 +77,6 @@ def predict():
 
     clean_input = clean_text(symptoms)
 
-    # Use keyword-based override first
     if classify_risk(clean_input) == 'HIGH':
         risk_pred = 1
         proba = 1.0
@@ -84,7 +84,6 @@ def predict():
         risk_pred = model.predict([clean_input])[0]
         proba = model.predict_proba([clean_input])[0][1]
 
-    # Find closest match for treatments
     match = df[df['Symptoms'].apply(lambda s: any(word in s for word in clean_input.split()))]
     match_row = match.iloc[0] if not match.empty else df.sample(1).iloc[0]
 
@@ -97,16 +96,6 @@ def predict():
     }
     return jsonify(response)
 
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
-
-
-# %%
-df.head()
-
-# %%
-
-
-
