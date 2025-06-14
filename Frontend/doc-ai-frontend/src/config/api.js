@@ -1,19 +1,25 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5001/api';
-
-// Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: 'http://localhost:5001/api',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
-  timeout: 5000, // 5 second timeout
+  withCredentials: true
 });
 
 // Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
+    // Log the request configuration
+    console.log('Making request:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    });
+
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -21,19 +27,38 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor to handle common errors
+// Add response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses
+    console.log('Response received:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
-    if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout');
-    } else if (!error.response) {
-      console.error('Network error:', error.message);
+    // Log detailed error information
+    console.error('Response error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );

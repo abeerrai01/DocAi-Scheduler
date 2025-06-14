@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import api from '../config/api';
 
 const DoctorSchedule = () => {
   const { user } = useAuth();
@@ -17,10 +17,7 @@ const DoctorSchedule = () => {
 
   const fetchSchedule = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5001/api/doctors/schedule', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/doctors/schedule');
       setSchedule(response.data);
       setLoading(false);
     } catch (error) {
@@ -33,18 +30,11 @@ const DoctorSchedule = () => {
   const handleAddSlot = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:5001/api/doctors/schedule',
-        {
-          date: selectedDate,
-          time: selectedTime,
-          duration
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      await api.post('/doctors/schedule', {
+        date: selectedDate,
+        time: selectedTime,
+        duration
+      });
       fetchSchedule();
       setSelectedDate('');
       setSelectedTime('');
@@ -57,10 +47,7 @@ const DoctorSchedule = () => {
 
   const handleDeleteSlot = async (slotId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/doctors/schedule/${slotId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/doctors/schedule/${slotId}`);
       fetchSchedule();
     } catch (error) {
       console.error('Error deleting slot:', error);

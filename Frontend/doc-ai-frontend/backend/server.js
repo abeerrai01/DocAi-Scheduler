@@ -9,11 +9,22 @@ require('dotenv').config();
 
 const app = express();
 
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
-  credentials: true
-}));
 app.use(express.json());
 
 // Error handling middleware
@@ -22,24 +33,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
-// Connect to MongoDB with retry logic
-const connectWithRetry = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-    });
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
     console.log('Connected to MongoDB');
     console.log('MongoDB URI:', process.env.MONGODB_URI);
-  } catch (err) {
+  })
+  .catch(err => {
     console.error('MongoDB connection error:', err);
-    console.log('Retrying connection in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
-  }
-};
-
-connectWithRetry();
+    process.exit(1);
+  });
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -52,40 +55,27 @@ app.get('/api/health', (req, res) => {
 });
 
 // Authentication middleware
-const auth = async (req, res, next) => {
+const authenticateToken = (req, res, next) => {
   try {
-    console.log('Auth headers:', req.headers);
-    const authHeader = req.header('Authorization');
-    console.log('Auth header:', authHeader);
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('Invalid auth header format');
-      return res.status(401).json({ message: 'Please authenticate with a valid Bearer token' });
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Extracted token:', token);
+    jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+      if (err) {
+        console.error('Token verification error:', err);
+        return res.status(403).json({ message: 'Invalid or expired token' });
+      }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
-
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      console.log('User not found for ID:', decoded.id);
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    req.user = user;
-    next();
+      req.user = user;
+      next();
+    });
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
-    }
-    res.status(401).json({ message: 'Please authenticate' });
+    console.error('Authentication error:', error);
+    res.status(500).json({ message: 'Authentication error' });
   }
 };
 
@@ -156,55 +146,63 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login attempt:', req.body);
     const { username, password, role } = req.body;
-    console.log('Login attempt for username:', username);
-    console.log('Requested role:', role);
 
-    const user = await User.findOne({ username });
+    // Validate input
+    if (!username || !password || !role) {
+      return res.status(400).json({ message: 'Please provide username, password, and role' });
+    }
+
+    // Find user
+    const user = await User.findOne({ username, role });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Verify role matches
-    if (user.role !== role) {
-      const errorMessage = user.role === 'doctor' 
-        ? 'You are registered as a doctor. Please select "Doctor" role to login.'
-        : 'You are registered as a patient. Please select "Patient" role to login.';
-      
-      return res.status(403).json({ 
-        message: errorMessage,
-        actualRole: user.role
-      });
-    }
-
+    // Generate token
     const token = jwt.sign(
-      { id: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
+      { 
+        _id: user._id,
+        username: user.username,
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
 
-    console.log('Login successful for user:', username);
+    // Create user response object
+    const userResponse = {
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      role: user.role
+    };
+
+    // Add isAvailable only for doctors
+    if (user.role === 'doctor') {
+      userResponse.isAvailable = user.isAvailable;
+    }
+
+    console.log('Login successful:', { userId: user._id, role: user.role });
+    
     res.json({
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        role: user.role,
-        isAvailable: user.isAvailable
-      }
+      user: userResponse
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({ message: 'Error during login' });
   }
 });
 
-app.get('/api/auth/me', auth, async (req, res) => {
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     res.json(req.user);
   } catch (error) {
@@ -213,31 +211,43 @@ app.get('/api/auth/me', auth, async (req, res) => {
   }
 });
 
-// Get all doctors
-app.get('/api/doctors', auth, async (req, res) => {
+// Get all available doctors
+app.get('/api/doctors', async (req, res) => {
   try {
-    const doctors = await User.find({ role: 'doctor' }).select('-password');
-    res.json(doctors);
+    console.log('Fetching doctors...');
+    const doctors = await User.find({ role: 'doctor' })
+      .select('-password')
+      .lean();
+
+    console.log('Raw doctors from DB:', doctors);
+
+    const transformedDoctors = doctors.map(doctor => ({
+      _id: doctor._id,
+      name: doctor.name,
+      specialization: doctor.specialization || 'General Medicine',
+      isAvailable: Boolean(doctor.isAvailable)
+    }));
+
+    console.log('Transformed doctors:', transformedDoctors);
+    res.json(transformedDoctors);
   } catch (error) {
-    console.error('Get doctors error:', error);
+    console.error('Error fetching doctors:', error);
     res.status(500).json({ message: 'Error fetching doctors' });
   }
 });
 
 // Get doctor availability
-app.get('/api/doctors/:doctorId/availability', auth, async (req, res) => {
+app.get('/api/doctors/:doctorId/availability', authenticateToken, async (req, res) => {
   try {
     console.log('Getting availability for doctor:', req.params.doctorId);
-    const doctor = await User.findById(req.params.doctorId);
+    const doctor = await User.findOne({ 
+      _id: req.params.doctorId,
+      role: 'doctor'
+    }).select('isAvailable');
     
     if (!doctor) {
       console.log('Doctor not found:', req.params.doctorId);
       return res.status(404).json({ message: 'Doctor not found' });
-    }
-
-    if (doctor.role !== 'doctor') {
-      console.log('User is not a doctor:', req.params.doctorId);
-      return res.status(403).json({ message: 'User is not a doctor' });
     }
 
     console.log('Doctor availability:', doctor.isAvailable);
@@ -249,77 +259,124 @@ app.get('/api/doctors/:doctorId/availability', auth, async (req, res) => {
 });
 
 // Update doctor availability
-app.put('/api/doctors/:doctorId/availability', auth, async (req, res) => {
+app.put('/api/doctors/:id/availability', authenticateToken, async (req, res) => {
   try {
-    console.log('Updating availability for doctor:', req.params.doctorId);
-    console.log('Request body:', req.body);
-    
     const { isAvailable } = req.body;
-    const doctor = await User.findById(req.params.doctorId);
-    
+    const doctorId = req.params.id;
+
+    // Verify the user is a doctor
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({ message: 'Only doctors can update availability' });
+    }
+
+    // Verify the doctor is updating their own availability
+    if (req.user._id.toString() !== doctorId) {
+      return res.status(403).json({ message: 'Cannot update another doctor\'s availability' });
+    }
+
+    const doctor = await User.findById(doctorId);
     if (!doctor) {
-      console.log('Doctor not found:', req.params.doctorId);
       return res.status(404).json({ message: 'Doctor not found' });
     }
-    
-    if (doctor.role !== 'doctor') {
-      console.log('User is not a doctor:', req.params.doctorId);
-      return res.status(403).json({ message: 'User is not a doctor' });
-    }
-    
-    // Only allow doctors to update their own availability
-    if (req.user.id !== doctor.id) {
-      console.log('Unauthorized update attempt. User:', req.user.id, 'Doctor:', doctor.id);
-      return res.status(403).json({ message: 'Not authorized to update this doctor\'s availability' });
-    }
-    
-    doctor.isAvailable = isAvailable;
+
+    doctor.isAvailable = Boolean(isAvailable);
     await doctor.save();
-    
-    console.log('Updated doctor availability:', doctor.isAvailable);
-    res.json({ isAvailable: doctor.isAvailable });
+
+    res.json({ 
+      message: 'Availability updated successfully',
+      isAvailable: doctor.isAvailable 
+    });
   } catch (error) {
-    console.error('Update doctor availability error:', error);
-    res.status(500).json({ message: 'Error updating doctor availability' });
+    console.error('Error updating doctor availability:', error);
+    res.status(500).json({ message: 'Error updating availability' });
   }
 });
 
 // Create appointment
-app.post('/api/appointments', auth, async (req, res) => {
+app.post('/api/appointments', authenticateToken, async (req, res) => {
   try {
     const { doctorId, date, time, reason } = req.body;
+    const patientId = req.user._id;
 
-    if (!doctorId || !date || !time || !reason) {
-      return res.status(400).json({ message: 'All fields are required' });
+    // Verify the user is a patient
+    if (req.user.role !== 'patient') {
+      return res.status(403).json({ message: 'Only patients can book appointments' });
     }
 
-    const appointment = new Appointment({
-      patient: req.user._id,
-      doctor: doctorId,
+    // Verify the doctor exists and is available
+    const doctor = await User.findOne({ _id: doctorId, role: 'doctor' });
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    if (!doctor.isAvailable) {
+      return res.status(400).json({ message: 'Doctor is not available' });
+    }
+
+    // Check if the time slot is available
+    const existingAppointment = await Appointment.findOne({
+      doctorId,
       date,
       time,
-      reason
+      status: { $ne: 'cancelled' }
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({ message: 'This time slot is already booked' });
+    }
+
+    // Create the appointment
+    const appointment = new Appointment({
+      doctorId,
+      patientId,
+      date,
+      time,
+      reason,
+      status: 'scheduled'
     });
 
     await appointment.save();
-    res.status(201).json(appointment);
+
+    res.status(201).json({
+      message: 'Appointment booked successfully',
+      appointment
+    });
   } catch (error) {
-    console.error('Create appointment error:', error);
-    res.status(500).json({ message: 'Error creating appointment' });
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ message: 'Error booking appointment' });
+  }
+});
+
+// Get appointments for a doctor
+app.get('/api/doctors/:doctorId/appointments', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching appointments for doctor:', req.params.doctorId);
+    
+    const appointments = await Appointment.find({ doctorId: req.params.doctorId })
+      .populate('patientId', 'name email')
+      .populate('doctorId', 'name email')
+      .sort({ date: 1 });
+
+    console.log('Found appointments:', appointments);
+    res.json(appointments);
+  } catch (error) {
+    console.error('Get doctor appointments error:', error);
+    res.status(500).json({ message: 'Error fetching appointments' });
   }
 });
 
 // Get user's appointments
-app.get('/api/appointments', auth, async (req, res) => {
+app.get('/api/appointments', authenticateToken, async (req, res) => {
   try {
     const query = req.user.role === 'doctor' 
-      ? { doctor: req.user._id }
-      : { patient: req.user._id };
+      ? { doctorId: req.user.id }
+      : { patientId: req.user.id };
 
     const appointments = await Appointment.find(query)
-      .populate('patient', 'name')
-      .populate('doctor', 'name')
-      .sort({ date: 1, time: 1 });
+      .populate('patientId', 'name username')
+      .populate('doctorId', 'name username')
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(appointments);
   } catch (error) {
@@ -328,58 +385,77 @@ app.get('/api/appointments', auth, async (req, res) => {
   }
 });
 
-// Update user profile
-app.put('/api/users/profile', auth, async (req, res) => {
+// Update profile endpoint
+app.put('/api/profile', authenticateToken, async (req, res) => {
   try {
     console.log('Profile update request received:', {
-      userId: req.user._id,
+      userId: req.user.id,
       body: req.body
     });
 
-    const { name, pincode } = req.body;
-    const userId = req.user._id;
+    if (!req.user || !req.user.id) {
+      console.log('No user ID in request');
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
 
-    const user = await User.findById(userId);
+    const { name, age, pincode } = req.body;
+
+    // Find user first to get username
+    const user = await User.findById(req.user.id);
     if (!user) {
-      console.log('User not found for ID:', userId);
+      console.log('User not found for ID:', req.user.id);
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update basic info
-    if (name) {
-      console.log('Updating name from', user.name, 'to', name);
-      user.name = name;
-    }
-    
-    if (pincode) {
-      if (!/^\d{6}$/.test(pincode)) {
-        console.log('Invalid pincode format:', pincode);
-        return res.status(400).json({ message: 'Invalid pincode format' });
-      }
-      console.log('Updating pincode from', user.pincode, 'to', pincode);
-      user.pincode = pincode;
+    // Set default values if not provided
+    const updateData = {
+      name: name || user.username, // Use username as default name
+      age: age ? Number(age) : 20,
+      pincode: pincode || '000000'
+    };
+
+    // Validate age
+    if (isNaN(updateData.age) || updateData.age < 0 || updateData.age > 120) {
+      console.log('Invalid age:', updateData.age);
+      return res.status(400).json({ message: 'Age must be between 0 and 120' });
     }
 
+    // Validate pincode
+    if (!/^\d{6}$/.test(updateData.pincode)) {
+      console.log('Invalid pincode:', updateData.pincode);
+      return res.status(400).json({ message: 'Pincode must be 6 digits' });
+    }
+
+    // Update user fields
+    user.name = updateData.name;
+    user.age = updateData.age;
+    user.pincode = updateData.pincode;
+
+    // Save changes
     await user.save();
-    console.log('Profile updated successfully for user:', userId);
+    console.log('Profile updated successfully for user:', user.username);
 
+    // Return updated user without password
     res.json({
       message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
-        pincode: user.pincode
-      }
+      user: user.getPublicProfile()
     });
   } catch (error) {
     console.error('Profile update error:', error);
-    res.status(500).json({ message: 'Error updating profile' });
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 });
 
-const PORT = process.env.PORT || 5001;
+// Protected route example
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ message: 'This is a protected route', user: req.user });
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV || 'development');
