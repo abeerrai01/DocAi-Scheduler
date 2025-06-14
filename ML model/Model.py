@@ -34,7 +34,8 @@ def classify_risk(symptoms):
     high_keywords = [
     'chest pain', 'seizure', 'stroke', 'unconscious',
     'shortness of breath', 'palpitation', 'bleeding',
-    'confusion', 'heart attack', 'cardiac arrest', 'tight chest'
+    'confusion', 'heart attack', 'cardiac arrest', 'tight chest','chestpain',
+    'shortnessofbreath','heartattack', 'cardiacarrest', 'tightchest'
 ]
 
     for kw in high_keywords:
