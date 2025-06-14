@@ -76,7 +76,7 @@ const SymptomChecker = () => {
       }
 
       // Step 2: Call ML model API
-      const mlRes = await fetch('http://localhost:5000/predict', {
+      const mlRes = await fetch('http://localhost:5050/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

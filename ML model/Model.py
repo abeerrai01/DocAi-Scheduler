@@ -14,7 +14,7 @@ import os
 # ------------------------------
 # Load dataset
 # ------------------------------
-df = pd.read_csv("D:\\DocAi-Scheduler\\ML model\\Diseases_Symptoms.csv")  # Make sure path & file exist
+df = pd.read_csv("Diseases_Symptoms.csv")  # Using relative path
 
 # ------------------------------
 # CLEANING & RISK LABELING
@@ -97,5 +97,5 @@ def predict():
     return jsonify(response)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5050))
     app.run(debug=True, host='0.0.0.0', port=port)
