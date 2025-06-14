@@ -40,7 +40,7 @@ public class PatientController {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(mlPayload, headers);
 
             // 5. Call ML API
-            String mlUrl = "http://localhost:5000/predict";
+            String mlUrl = "http://localhost:5050/predict";
             ResponseEntity<String> mlResponse = restTemplate.postForEntity(mlUrl, entity, String.class);
 
             // 6. Return result
