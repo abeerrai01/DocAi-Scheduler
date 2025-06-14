@@ -21,14 +21,16 @@ const SymptomChecker = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [patientName, setPatientName] = useState('');
+  const [patientAge, setPatientAge] = useState('');
+  const [patientPincode, setPatientPincode] = useState('');
+
   const handleSymptomChange = (symptomId) => {
-    setSelectedSymptoms(prev => {
-      if (prev.includes(symptomId)) {
-        return prev.filter(id => id !== symptomId);
-      } else {
-        return [...prev, symptomId];
-      }
-    });
+    setSelectedSymptoms((prev) =>
+      prev.includes(symptomId)
+        ? prev.filter((id) => id !== symptomId)
+        : [...prev, symptomId]
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -36,37 +38,50 @@ const SymptomChecker = () => {
     setLoading(true);
     setError('');
 
-    if (selectedSymptoms.length === 0 && !additionalSymptoms.trim()) {
-      setError('Please select or describe your symptoms');
+    if (
+      !patientName.trim() ||
+      !patientAge ||
+      !patientPincode.trim() ||
+      (selectedSymptoms.length === 0 && !additionalSymptoms.trim())
+    ) {
+      setError('Please fill all details and select or describe symptoms');
       setLoading(false);
       return;
     }
 
     try {
-      // Here you would typically make an API call to your backend
-      // For now, we'll just simulate a response
-      const response = {
-        success: true,
-        analysis: {
-          possibleConditions: ['Common Cold', 'Flu'],
-          severity: selectedSymptoms.includes('chest_pain') || selectedSymptoms.includes('shortness_breath') ? 'High' : 'Low',
-          recommendations: ['Rest', 'Stay Hydrated']
-        }
+      const payload = {
+        name: patientName,
+        age: parseInt(patientAge),
+        symptoms: selectedSymptoms
+          .map((id) => commonSymptoms.find((s) => s.id === id)?.label)
+          .concat(additionalSymptoms ? [additionalSymptoms] : [])
+          .join(', '),
+        pincode: patientPincode
       };
 
-      if (response.success) {
-        // Navigate to results page with the analysis data
-        navigate('/symptom-results', { 
-          state: { 
-            analysis: response.analysis,
+      const res = await fetch('http://localhost:8080/api/patient/submit-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        navigate('/symptom-results', {
+          state: {
+            analysis: data.analysis || {},
             symptoms: {
-              selected: selectedSymptoms.map(id => commonSymptoms.find(s => s.id === id)?.label).join(', '),
+              selected: payload.symptoms,
               additional: additionalSymptoms
             }
           }
         });
       } else {
-        setError('Failed to analyze symptoms. Please try again.');
+        const errMsg = await res.text();
+        throw new Error(errMsg || 'Failed to submit data');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -98,6 +113,40 @@ const SymptomChecker = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Patient Details */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <input
+                      type="text"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md shadow-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Age</label>
+                    <input
+                      type="number"
+                      value={patientAge}
+                      onChange={(e) => setPatientAge(e.target.value)}
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md shadow-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Pincode</label>
+                    <input
+                      type="text"
+                      value={patientPincode}
+                      onChange={(e) => setPatientPincode(e.target.value)}
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md shadow-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
                 {/* Common Symptoms */}
                 <div>
                   <h2 className="text-lg font-medium text-gray-900 mb-4">Common Symptoms</h2>
@@ -166,6 +215,7 @@ const SymptomChecker = () => {
             </div>
           </div>
 
+          {/* Notice */}
           <div className="mt-8 bg-white shadow sm:rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -173,7 +223,7 @@ const SymptomChecker = () => {
               </h3>
               <div className="mt-2 max-w-xl text-sm text-gray-500">
                 <p>
-                  This symptom checker is powered by AI and is for informational purposes only. 
+                  This symptom checker is powered by AI and is for informational purposes only.
                   It is not a substitute for professional medical advice, diagnosis, or treatment.
                 </p>
               </div>
@@ -206,4 +256,4 @@ const SymptomChecker = () => {
   );
 };
 
-export default SymptomChecker; 
+export default SymptomChecker;
