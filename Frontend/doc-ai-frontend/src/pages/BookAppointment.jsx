@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../config/api';
 
 const BookAppointment = () => {
   const navigate = useNavigate();
@@ -19,17 +20,10 @@ const BookAppointment = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/doctors', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setDoctors(data);
-      } else {
-        setError('Failed to fetch doctors');
-      }
+      const response = await api.get('/doctors');
+      // Filter only available doctors
+      const availableDoctors = response.data.filter(doctor => doctor.isAvailable);
+      setDoctors(availableDoctors);
     } catch (err) {
       setError('Error connecting to server');
     }
@@ -41,27 +35,16 @@ const BookAppointment = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          doctorId: selectedDoctor,
-          date,
-          time,
-          reason,
-          patientId: user._id
-        })
+      const response = await api.post('/appointments', {
+        doctorId: selectedDoctor,
+        appointmentType: 'regular',
+        symptoms: reason
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.data) {
         navigate('/appointments');
       } else {
-        setError(data.message || 'Failed to book appointment');
+        setError('Failed to book appointment');
       }
     } catch (err) {
       setError('Error connecting to server');

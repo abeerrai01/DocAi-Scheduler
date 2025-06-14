@@ -1,138 +1,111 @@
-# DocAi-Scheduler
+# DocAI Scheduler
 
-A modern web application for AI-powered medical appointment scheduling and symptom checking. This project includes both a frontend (React + Vite) and a backend (Node.js + Express + MongoDB).
+A comprehensive medical appointment scheduling system with features for both doctors and patients.
 
 ## Features
-- **User Authentication**: Register and login as a patient or doctor
-- **Role-based Dashboards**: Separate portals for patients and doctors
-- **Symptom Checker**: AI-powered symptom analysis and emergency detection
-- **Doctor Availability**: Doctors can toggle their availability
-- **Appointment Booking**: Patients can book appointments with available doctors
-- **Profile Management**: Update pincode and view profile details
-- **Secure API**: JWT-based authentication and protected routes
-- **Responsive UI**: Modern, mobile-friendly design
 
-## Folder Structure
-```
-/DocAi-Scheduler
-├── backend/           # Node.js/Express backend
-├── src/               # React frontend source code
-├── public/            # Static assets
-├── package.json       # Project metadata and scripts
-├── README.md          # Project documentation
-└── ...
-```
+### For Patients
+- Book appointments with available doctors
+- View past appointments and their status
+- Access detailed doctor information including address
+- Symptom checker for preliminary health assessment
+- View appointment history with status tracking
 
-## Getting Started
+### For Doctors
+- Manage availability status
+- View and manage appointments
+- Set up schedule and working hours
+- View patient details and appointment history
 
-### Prerequisites
-- Node.js (v16+ recommended)
-- npm
-- MongoDB Atlas account (or local MongoDB)
+## Tech Stack
 
-### Backend Setup
-1. `cd backend`
-2. Copy `.env.example` to `.env` and fill in your MongoDB URI and JWT secret
-3. Install dependencies:
-   ```sh
-   npm install
-   ```
-4. Start the backend server:
-   ```sh
-   npm start
-   ```
+- Frontend: React.js with Tailwind CSS
+- Backend: Node.js with Express
+- Database: MongoDB
+- Authentication: JWT
 
-### Frontend Setup
-1. Go to the project root:
-   ```sh
-   cd ..
-   ```
-2. Install frontend dependencies:
-   ```sh
-   npm install
-   ```
-3. Start the frontend:
-   ```sh
-   npm run dev
-   ```
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
+## Prerequisites
 
-## Usage
-- Register as a patient or doctor
-- Doctors can set their availability and view appointments
-- Patients can check symptoms, book appointments, and manage their profile
-- Admin features can be added as needed
+- Node.js (v14 or higher)
+- MongoDB
+- npm or yarn
 
-## API Endpoints
-- `POST /api/auth/register` — Register a new user
-- `POST /api/auth/login` — Login
-- `GET /api/doctors` — List available doctors
-- `PUT /api/doctors/:doctorId/availability` — Toggle doctor availability
-- `POST /api/appointments` — Book an appointment
-- `PUT /api/users/profile` — Update user profile
+## Installation
 
-## Contributing
-1. Fork this repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to your branch (`git push origin feature/your-feature`)
-5. Create a Pull Request
-
-## License
-This project is licensed under the MIT License.
-
----
-
-**Disclaimer:** This project is for educational purposes only. The AI symptom checker is not a substitute for professional medical advice. Always consult a qualified healthcare provider for medical concerns.
-
-## Running the Project After Cloning
-
-### 1. Clone the Repository
-If you haven't already, clone the repository:
-```sh
-git clone https://github.com/pushpendra-9/doc-ai-frontend.git
-cd doc-ai-frontend
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/docai-scheduler.git
+cd docai-scheduler
 ```
 
-### 2. Install Dependencies
-Install the required dependencies for both the frontend and backend:
-
-#### Frontend
-```sh
-npm install
-```
-
-#### Backend
-```sh
+2. Install backend dependencies:
+```bash
 cd backend
 npm install
 ```
 
-### 3. Set Up Environment Variables
-- Copy the `.env.example` file in the `backend` directory to a new file named `.env`.
-- Fill in your MongoDB URI and JWT secret in the `.env` file.
+3. Install frontend dependencies:
+```bash
+cd ../src
+npm install
+```
 
-### 4. Start the Backend Server
-In the `backend` directory, run:
-```sh
+4. Create a `.env` file in the backend directory with the following variables:
+```
+PORT=5001
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+```
+
+## Running the Application
+
+1. Start the backend server:
+```bash
+cd backend
 npm start
 ```
 
-### 5. Start the Frontend
-Go back to the project root and start the frontend:
-```sh
-cd ..
-npm run dev
+2. In a new terminal, start the frontend:
+```bash
+cd src
+npm start
 ```
 
-### 6. Access the Application
-Open your browser and go to [http://localhost:5173](http://localhost:5173) to see the application running.
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5001
 
-### Summary
-- **Clone** the repository.
-- **Install dependencies** for both frontend and backend.
-- **Set up environment variables** for the backend.
-- **Start the backend server** and **frontend**.
-- **Access the application** in your browser.
+## API Endpoints
 
-If you encounter any issues or need further assistance, feel free to ask!
+### Authentication
+- POST /api/auth/register - Register a new user
+- POST /api/auth/login - Login user
+- GET /api/auth/profile - Get user profile
+
+### Appointments
+- GET /api/appointments - Get all appointments
+- POST /api/appointments - Create new appointment
+- GET /api/appointments/:id - Get appointment details
+- PUT /api/appointments/:id - Update appointment
+- DELETE /api/appointments/:id - Cancel appointment
+
+### Doctors
+- GET /api/doctors - Get all available doctors
+- GET /api/doctors/:id - Get doctor details
+- PUT /api/doctors/:id/availability - Update doctor availability
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support, email support@docai-scheduler.com or open an issue in the repository.

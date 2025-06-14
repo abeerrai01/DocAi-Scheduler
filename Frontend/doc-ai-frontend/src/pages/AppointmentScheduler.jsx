@@ -1,23 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import api from '../config/api';
 
 const AppointmentScheduler = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     doctorId: '',
-    date: '',
-    time: '',
-    reason: '',
+    appointmentType: 'regular',
     symptoms: ''
   });
+  const [doctors, setDoctors] = useState([]);
 
-  // Mock doctors data - In a real app, this would come from an API
-  const doctors = [
-    { id: '1', name: 'Dr. Sarah Johnson', specialization: 'General Medicine' },
-    { id: '2', name: 'Dr. Michael Chen', specialization: 'Cardiology' },
-    { id: '3', name: 'Dr. Emily Brown', specialization: 'Pediatrics' }
-  ];
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      const response = await api.get('/doctors');
+      // Filter only available doctors
+      const availableDoctors = response.data.filter(doctor => doctor.isAvailable);
+      setDoctors(availableDoctors);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+      setError('Failed to fetch doctors');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,22 +42,18 @@ const AppointmentScheduler = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      // TODO: Implement API call to schedule appointment
-      console.log('Scheduling appointment:', formData);
-      
-      // Mock successful scheduling
-      setTimeout(() => {
-        navigate('/dashboard', { 
-          state: { 
-            message: 'Appointment scheduled successfully!' 
-          }
-        });
-      }, 1000);
+      const response = await api.post('/appointments', formData);
+      navigate('/dashboard', { 
+        state: { 
+          message: 'Appointment scheduled successfully!' 
+        }
+      });
     } catch (error) {
       console.error('Error scheduling appointment:', error);
-      // TODO: Show error message to user
+      setError('Failed to schedule appointment. Please try again.');
     } finally {
       setLoading(false);
     }

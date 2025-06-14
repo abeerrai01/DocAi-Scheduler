@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -8,29 +9,22 @@ const Dashboard = () => {
   const { currentUser } = useAuth();
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchAppointments = async () => {
+    try {
+      const response = await api.get('/appointments');
+      setUpcomingAppointments(response.data);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      setError('Failed to fetch appointments');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // TODO: Fetch upcoming appointments from API
-    // Mock data for now
-    const mockAppointments = [
-      {
-        id: 1,
-        doctorName: 'Dr. Sarah Johnson',
-        date: '2024-03-20',
-        time: '10:00 AM',
-        reason: 'Regular checkup'
-      },
-      {
-        id: 2,
-        doctorName: 'Dr. Michael Chen',
-        date: '2024-03-25',
-        time: '2:30 PM',
-        reason: 'Follow-up consultation'
-      }
-    ];
-
-    setUpcomingAppointments(mockAppointments);
-    setLoading(false);
+    fetchAppointments();
   }, []);
 
   const handleFeatureClick = (feature) => {
@@ -114,22 +108,31 @@ const Dashboard = () => {
           <div className="border-t border-gray-200">
             {loading ? (
               <div className="p-4 text-center text-gray-500">Loading appointments...</div>
+            ) : error ? (
+              <div className="p-4 text-center text-red-500">{error}</div>
             ) : upcomingAppointments.length > 0 ? (
               <ul className="divide-y divide-gray-200">
                 {upcomingAppointments.map((appointment) => (
-                  <li key={appointment.id} className="px-4 py-4 sm:px-6">
+                  <li key={appointment._id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {appointment.doctorName}
+                          {appointment.doctorId?.name || 'Unknown Doctor'}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {appointment.date} at {appointment.time}
+                          {new Date(appointment.date).toLocaleDateString()}
                         </p>
-                        <p className="text-sm text-gray-500">{appointment.reason}</p>
+                        <p className="text-sm text-gray-500">
+                          Type: {appointment.isEmergency ? 'Emergency' : 'Regular'}
+                        </p>
+                        {appointment.symptoms && appointment.symptoms.length > 0 && (
+                          <p className="text-sm text-gray-500">
+                            Symptoms: {appointment.symptoms.join(', ')}
+                          </p>
+                        )}
                       </div>
                       <button
-                        onClick={() => navigate(`/appointment-scheduler?edit=${appointment.id}`)}
+                        onClick={() => navigate(`/appointments?edit=${appointment._id}`)}
                         className="text-sm text-blue-600 hover:text-blue-800"
                       >
                         Reschedule

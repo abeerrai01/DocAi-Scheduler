@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import api from '../config/api';
 
 const DoctorAppointments = () => {
   const { user } = useAuth();
@@ -20,7 +20,9 @@ const DoctorAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await axios.get(`http://localhost:5001/api/doctors/${user._id}/appointments`);
+      console.log('Fetching appointments for doctor:', user._id);
+      const response = await api.get(`/doctors/${user._id}/appointments`);
+      console.log('Appointments response:', response.data);
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -32,9 +34,11 @@ const DoctorAppointments = () => {
 
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
-      await axios.put(`http://localhost:5001/api/appointments/${appointmentId}`, {
+      console.log('Updating appointment status:', { appointmentId, newStatus });
+      await api.put(`/appointments/${appointmentId}`, {
         status: newStatus
       });
+      console.log('Status updated successfully');
       fetchAppointments(); // Refresh the list
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -69,7 +73,7 @@ const DoctorAppointments = () => {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-medium text-gray-900">
-                  {appointment.patient.name}
+                  {appointment.patientId?.name || 'Unknown Patient'}
                 </h3>
                 <p className="text-sm text-gray-500">
                   {new Date(appointment.date).toLocaleDateString()} at{' '}
@@ -91,12 +95,18 @@ const DoctorAppointments = () => {
 
             <div className="space-y-2">
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Patient ID:</span>{' '}
-                {appointment.patient._id}
+                <span className="font-medium">Patient Email:</span>{' '}
+                {appointment.patientId?.email || 'N/A'}
               </p>
+              {appointment.symptoms && appointment.symptoms.length > 0 && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Symptoms:</span>{' '}
+                  {appointment.symptoms.join(', ')}
+                </p>
+              )}
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Contact:</span>{' '}
-                {appointment.patient.email}
+                <span className="font-medium">Type:</span>{' '}
+                {appointment.isEmergency ? 'Emergency' : 'Regular Checkup'}
               </p>
             </div>
 

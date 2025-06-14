@@ -7,28 +7,41 @@ import {
   CardContent,
   Grid,
   Button,
-  TextField,
   CircularProgress,
 } from '@mui/material';
-import axios from 'axios';
+import api from '../config/api';
 import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const DoctorPortal = () => {
+  const { user, isAuthenticated } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [doctorId, setDoctorId] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // In a real app, this would come from authentication
-    setDoctorId('1'); // Dummy doctor ID
+    // Check if user is authenticated and is a doctor
+    if (!isAuthenticated || !user) {
+      console.log('User not authenticated, redirecting to login');
+      navigate('/login');
+      return;
+    }
+
+    if (user.role !== 'doctor') {
+      console.log('User is not a doctor, redirecting to home');
+      navigate('/');
+      return;
+    }
+
     fetchAppointments();
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
   const fetchAppointments = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/appointments/doctor/${doctorId}`
-      );
+      setLoading(true);
+      const response = await api.get('/appointments');
+      console.log('Fetched appointments:', response.data);
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -38,10 +51,10 @@ const DoctorPortal = () => {
     }
   };
 
-  const handleUpdateAvailability = async (appointmentId, status) => {
+  const handleUpdateStatus = async (appointmentId, newStatus) => {
     try {
-      await axios.put(`http://localhost:8080/api/appointments/${appointmentId}`, {
-        status,
+      await api.put(`/appointments/${appointmentId}`, {
+        status: newStatus
       });
       toast.success('Appointment status updated');
       fetchAppointments();
@@ -86,7 +99,7 @@ const DoctorPortal = () => {
               ) : (
                 appointments.map((appointment) => (
                   <Box
-                    key={appointment.id}
+                    key={appointment._id}
                     sx={{
                       p: 2,
                       mb: 2,
@@ -98,19 +111,24 @@ const DoctorPortal = () => {
                     <Grid container spacing={2} alignItems="center">
                       <Grid item xs={12} sm={4}>
                         <Typography variant="subtitle1">
-                          Patient: {appointment.patientName}
+                          Patient: {appointment.patientId?.name || 'Unknown'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Phone: {appointment.patientPhone}
+                          Type: {appointment.appointmentType === 'emergency' ? 'Emergency' : 'Regular'}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={4}>
                         <Typography variant="body2">
-                          Date: {new Date(appointment.dateTime).toLocaleDateString()}
+                          Date: {new Date(appointment.date).toLocaleDateString()}
                         </Typography>
                         <Typography variant="body2">
-                          Time: {new Date(appointment.dateTime).toLocaleTimeString()}
+                          Time: {appointment.time}
                         </Typography>
+                        {appointment.symptoms && (
+                          <Typography variant="body2" color="text.secondary">
+                            Symptoms: {appointment.symptoms}
+                          </Typography>
+                        )}
                       </Grid>
                       <Grid item xs={12} sm={4}>
                         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -118,19 +136,23 @@ const DoctorPortal = () => {
                             variant="contained"
                             color="success"
                             size="small"
-                            onClick={() =>
-                              handleUpdateAvailability(appointment.id, 'CONFIRMED')
-                            }
+                            onClick={() => handleUpdateStatus(appointment._id, 'in-progress')}
                           >
-                            Confirm
+                            Start
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() => handleUpdateStatus(appointment._id, 'completed')}
+                          >
+                            Complete
                           </Button>
                           <Button
                             variant="contained"
                             color="error"
                             size="small"
-                            onClick={() =>
-                              handleUpdateAvailability(appointment.id, 'CANCELLED')
-                            }
+                            onClick={() => handleUpdateStatus(appointment._id, 'cancelled')}
                           >
                             Cancel
                           </Button>

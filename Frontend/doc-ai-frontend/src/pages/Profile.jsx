@@ -1,79 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5001/api';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 5000, // 5 second timeout
-});
-
-// Add request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Ensure token is in the correct format
-      const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      config.headers.Authorization = formattedToken;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import api from '../config/api';
 
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     name: '',
-    pincode: '',
-    age: ''
+    age: '20',
+    pincode: '000000'
   });
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [validationErrors, setValidationErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (user) {
-      console.log('Setting initial form data:', user);
       setFormData({
         username: user.username || '',
-        name: user.name || '',
-        pincode: user.pincode || '000001',
-        age: user.age || '20' // Default to '20' if no age
+        name: user.name || user.username || '',
+        age: user.age?.toString() || '20',
+        pincode: user.pincode || '000000'
       });
     }
   }, [user]);
-
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) {
-      errors.name = 'Full Name is required';
-    }
-    if (!formData.pincode.trim()) {
-      errors.pincode = 'Pincode is required';
-    } else if (!/^\d{6}$/.test(formData.pincode)) {
-      errors.pincode = 'Pincode must be 6 digits';
-    }
-    if (!formData.age) {
-      errors.age = 'Age is required';
-    } else {
-      const age = parseInt(formData.age);
-      if (isNaN(age) || age < 0 || age > 120) {
-        errors.age = 'Age must be between 0 and 120';
-      }
-    }
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -81,188 +31,148 @@ const Profile = () => {
       ...prev,
       [name]: value
     }));
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage({ type: '', text: '' });
-    setIsLoading(true);
-
-    if (!validateForm()) {
-      setIsLoading(false);
-      return;
-    }
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
-      console.log('Submitting profile update:', formData);
-      
-      const response = await api.put('/users/profile', {
-        name: formData.name,
-        pincode: formData.pincode
-      });
+      // Ensure all fields have values
+      const updateData = {
+        name: formData.name || formData.username,
+        age: formData.age || '20',
+        pincode: formData.pincode || '000000'
+      };
 
+      // Validate age
+      const ageNum = Number(updateData.age);
+      if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
+        setError('Age must be between 0 and 120');
+        setLoading(false);
+        return;
+      }
+
+      // Validate pincode
+      if (!/^\d{6}$/.test(updateData.pincode)) {
+        setError('Pincode must be 6 digits');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Sending profile update request:', updateData);
+
+      const response = await api.put('/api/profile', updateData);
       console.log('Profile update response:', response.data);
 
-      // Update the user context with new data
       if (response.data.user) {
-        setUser(prevUser => ({
-          ...prevUser,
+        const updatedUser = {
+          ...user,
           ...response.data.user
+        };
+        updateUser(updatedUser);
+        setSuccess('Profile updated successfully');
+        setFormData(prev => ({
+          ...prev,
+          name: response.data.user.name,
+          age: response.data.user.age?.toString() || '20',
+          pincode: response.data.user.pincode || '000000'
         }));
       }
-
-      setMessage({
-        type: 'success',
-        text: 'Profile updated successfully'
-      });
-    } catch (error) {
-      console.error('Profile update error:', error);
-      let errorMessage = 'Failed to update profile';
-      
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        errorMessage = error.response.data.message || errorMessage;
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        errorMessage = 'No response from server. Please try again.';
-      } else {
-        console.error('Error setting up request:', error.message);
-        errorMessage = error.message;
-      }
-
-      setMessage({
-        type: 'error',
-        text: errorMessage
+    } catch (err) {
+      console.error('Profile update error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to update profile';
+      setError(errorMessage);
+      console.log('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
-
-          {message.text && (
-            <div
-              className={`mb-4 p-4 rounded ${
-                message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  name="username"
-                  id="username"
-                  value={formData.username}
-                  disabled
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  name="name"
-                  id="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.name ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                />
-                {validationErrors.name && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">
-                Pincode
-              </label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  name="pincode"
-                  id="pincode"
-                  maxLength="6"
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.pincode ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  placeholder="Enter 6-digit pincode"
-                />
-                {validationErrors.pincode && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.pincode}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                Age
-              </label>
-              <div className="mt-1">
-                <input
-                  type="number"
-                  name="age"
-                  id="age"
-                  min="0"
-                  max="120"
-                  value={formData.age}
-                  onChange={handleChange}
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.age ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  placeholder="Enter your age"
-                />
-                {validationErrors.age && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.age}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                  isLoading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-              >
-                {isLoading ? 'Updating...' : 'Update Profile'}
-              </button>
-            </div>
-          </form>
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Profile</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
-      </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Username</label>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            disabled
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Name</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Age</label>
+          <input
+            type="number"
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+            required
+            min="0"
+            max="120"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Pincode</label>
+          <input
+            type="text"
+            name="pincode"
+            value={formData.pincode}
+            onChange={handleChange}
+            required
+            pattern="\d{6}"
+            maxLength="6"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {loading ? 'Updating...' : 'Update Profile'}
+        </button>
+      </form>
     </div>
   );
 };
