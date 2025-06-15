@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: doc-ai-scheduler
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: VITE_API_URL
+        value: https://doc-ai-scheduler-backend.onrender.com/api
+      - key: VITE_ML_MODEL_URL
+        value: https://doc-ai-scheduler-ml.onrender.com 

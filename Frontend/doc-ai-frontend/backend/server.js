@@ -10,22 +10,11 @@ require('dotenv').config();
 
 const app = express();
 
-// Enable CORS for all routes
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
-
 // Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 // Error handling middleware
@@ -35,10 +24,11 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/docai-scheduler';
+mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    console.log('MongoDB URI:', process.env.MONGODB_URI);
+    console.log('MongoDB URI:', MONGODB_URI);
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);
@@ -492,7 +482,7 @@ app.get('/api/protected', authenticateToken, (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV || 'development');
