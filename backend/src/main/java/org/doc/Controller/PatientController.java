@@ -9,7 +9,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(
+    origins = {
+        "http://localhost:5173",
+        "https://doc-ai-scheduler.vercel.app"
+    },
+    allowCredentials = "true"
+)
 @RestController
 @RequestMapping("/api/patient")
 public class PatientController {
