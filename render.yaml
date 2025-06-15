@@ -1,48 +1,25 @@
 services:
-  # Frontend Service
   - type: web
-    name: doc-ai-scheduler
-    env: node
-    rootDir: Frontend/doc-ai-frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    name: docai-backend
+    env: docker
+    repo: https://github.com/abeerrai01/DocAi-Scheduler
+    branch: main
+    rootDir: backend
+    plan: free
     envVars:
-      - key: VITE_API_URL
-        value: https://doc-ai-scheduler-backend.onrender.com/api
-      - key: VITE_ML_MODEL_URL
-        value: https://doc-ai-scheduler-ml.onrender.com
-
-  # Backend Service
-  - type: web
-    name: doc-ai-scheduler-backend
-    env: node
-    rootDir: Frontend/doc-ai-frontend/backend
-    buildCommand: npm install
-    startCommand: npm start
-    envVars:
-      - key: PORT
-        value: 5001
-      - key: MONGODB_URI
-        value: mongodb+srv://pushpendratri9:6ZC1fr6xZ30gWHsC@cluster0.rdsf7tb.mongodb.net/docai?retryWrites=true&w=majority&appName=Cluster0
-      - key: JWT_SECRET
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30
-      - key: FRONTEND_URL
-        value: https://doc-ai-scheduler.onrender.com
-      - key: ML_MODEL_URL
-        value: https://doc-ai-scheduler-ml.onrender.com
-
-  # ML Model Service
-  - type: web
-    name: doc-ai-scheduler-ml
-    env: python
-    rootDir: ML model
-    buildCommand: |
-      python -m venv venv
-      . venv/bin/activate
-      pip install -r requirements.txt
-    startCommand: |
-      . venv/bin/activate
-      python model.py
-    envVars:
-      - key: PORT
-        value: 5050 
+      - key: SPRING_APPLICATION_NAME
+        value: Backend
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:mysql://centerbeam.proxy.rlwy.net:24095/railway
+      - key: SPRING_DATASOURCE_USERNAME
+        value: root
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: SnZgpgkVyPNWPIDuFRotlDIxRaUBluyJ
+      - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+        value: com.mysql.cj.jdbc.Driver
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_JPA_SHOW_SQL
+        value: true
+      - key: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+        value: org.hibernate.dialect.MySQLDialect 
