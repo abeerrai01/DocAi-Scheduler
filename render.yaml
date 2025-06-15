@@ -6,6 +6,7 @@ services:
     branch: main
     rootDir: backend
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: SPRING_APPLICATION_NAME
         value: Backend

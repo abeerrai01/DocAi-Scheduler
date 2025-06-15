@@ -30,13 +30,13 @@ cd ..
 
 # --- Start Backend (Port 5001) ---
 echo "🧾 Starting Backend on port 5001..."
-cd "D:\Pishpendra\Doc-Ai\Frontend\doc-ai-frontend\backend" || { echo "❌ Backend not found"; exit 1; }
+cd "D:\DocAi-Scheduler\Frontend\doc-ai-frontend\backend" || { echo "❌ Backend not found"; exit 1; }
 npm install
 npm start &
 
 # --- Start Frontend (Port 5173) ---
 echo "🌐 Starting Frontend on port 5173..."
-cd "D:\Pishpendra\Doc-Ai\Frontend\doc-ai-frontend" || { echo "❌ Frontend not found"; exit 1; }
+cd "D:\DocAi-Scheduler\Frontend\doc-ai-frontend" || { echo "❌ Frontend not found"; exit 1; }
 npm install
 npm run dev &
 
