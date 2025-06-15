@@ -1,14 +1,17 @@
+# Use Python image
 FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the rest of the app
 COPY . .
 
-# Set Flask to run on 5050
-ENV PORT=5050
+# Expose Flask port
+EXPOSE 5050
 
-# Run on 0.0.0.0:5050, internally
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "app:app"] 
+# Run the app
+CMD ["python", "model.py"]

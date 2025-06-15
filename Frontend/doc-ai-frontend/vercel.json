@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://docai-scheduler-1ku7.onrender.com/api/:path*"
+      "destination": "https://docai-scheduler-production.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",

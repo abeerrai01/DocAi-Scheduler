@@ -4,14 +4,14 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-CORS(app, origins=["https://doc-ai-scheduler.vercel.app", "http://localhost:5173"], supports_credentials=True)
+CORS(app)  # Simplified CORS for Replit
 
 # Load the model
 model = joblib.load("triage_model.pkl")
 
 @app.route('/')
 def home():
-    return "ML API is live on port 5050!"
+    return "ML API is live on port 3000!"
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -20,7 +20,6 @@ def predict():
         symptoms = data.get('symptoms', [])
         
         # Convert symptoms to model input format
-        # Assuming your model expects a specific format, adjust this accordingly
         features = np.array(symptoms).reshape(1, -1)
         
         # Make prediction
@@ -39,4 +38,4 @@ def predict():
         }), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050) 
+    app.run(host='0.0.0.0', port=3000) 
