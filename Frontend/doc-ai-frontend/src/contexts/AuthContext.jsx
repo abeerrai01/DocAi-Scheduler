@@ -20,6 +20,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const register = async (userData) => {
+    try {
+      const response = await api.post('/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Registration failed');
+    }
+  };
+
   const login = async (newToken, userData) => {
     try {
       setToken(newToken);
@@ -51,6 +64,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    register,
     login,
     logout,
     isAuthenticated,

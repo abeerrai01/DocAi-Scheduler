@@ -10,12 +10,6 @@ const DoctorDashboard = () => {
       description: 'View and manage your upcoming appointments',
       icon: '📅',
       path: '/doctor/appointments'
-    },
-    {
-      title: 'View Profile',
-      description: 'View and update your professional profile',
-      icon: '👤',
-      path: '/profile'
     }
   ];
 

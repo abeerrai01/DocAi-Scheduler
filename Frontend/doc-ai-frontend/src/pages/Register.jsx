@@ -88,14 +88,15 @@ const Register = () => {
         pincode: formData.pincode
       });
 
-      if (result.error) {
-        setError(result.error);
-        if (result.details) {
-          setFieldErrors(result.details);
-        }
-      } else {
-        navigate('/');
-      }
+      // Show success message
+      alert('Registration successful! Please login with your credentials.');
+      
+      // Log out the user
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Refresh the page and redirect to login
+      window.location.href = '/login';
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {

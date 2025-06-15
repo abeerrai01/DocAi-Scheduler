@@ -16,12 +16,6 @@ const PatientDashboard = () => {
       description: 'Schedule an appointment with a doctor',
       icon: '📅',
       path: '/appointments'
-    },
-    {
-      title: 'View Profile',
-      description: 'View and update your profile information',
-      icon: '👤',
-      path: '/profile'
     }
   ];
 

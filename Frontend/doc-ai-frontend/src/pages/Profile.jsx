@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../config/api';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -16,14 +16,25 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        username: user.username || '',
-        name: user.name || user.username || '',
-        age: user.age?.toString() || '20',
-        pincode: user.pincode || '000000'
-      });
+      fetchProfile();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get('/api/profile');
+      const profile = response.data;
+      setFormData({
+        username: profile.username,
+        name: profile.name,
+        age: profile.age.toString(),
+        pincode: profile.pincode
+      });
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError('Failed to load profile');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,56 +51,22 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      // Ensure all fields have values
-      const updateData = {
-        name: formData.name || formData.username,
-        age: formData.age || '20',
-        pincode: formData.pincode || '000000'
-      };
-
-      // Validate age
-      const ageNum = Number(updateData.age);
-      if (isNaN(ageNum) || ageNum < 0 || ageNum > 120) {
-        setError('Age must be between 0 and 120');
-        setLoading(false);
-        return;
-      }
-
-      // Validate pincode
-      if (!/^\d{6}$/.test(updateData.pincode)) {
-        setError('Pincode must be 6 digits');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Sending profile update request:', updateData);
-
-      const response = await api.put('/api/profile', updateData);
-      console.log('Profile update response:', response.data);
-
-      if (response.data.user) {
-        const updatedUser = {
-          ...user,
-          ...response.data.user
-        };
-        updateUser(updatedUser);
-        setSuccess('Profile updated successfully');
-        setFormData(prev => ({
-          ...prev,
-          name: response.data.user.name,
-          age: response.data.user.age?.toString() || '20',
-          pincode: response.data.user.pincode || '000000'
-        }));
-      }
-    } catch (err) {
-      console.error('Profile update error:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to update profile';
-      setError(errorMessage);
-      console.log('Error details:', {
-        status: err.response?.status,
-        data: err.response?.data,
-        message: err.message
+      const response = await api.put('/api/profile', {
+        name: formData.name,
+        age: parseInt(formData.age),
+        pincode: formData.pincode
       });
+
+      setSuccess('Profile updated successfully');
+      setFormData(prev => ({
+        ...prev,
+        name: response.data.name,
+        age: response.data.age.toString(),
+        pincode: response.data.pincode
+      }));
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -157,21 +134,22 @@ const Profile = () => {
             value={formData.pincode}
             onChange={handleChange}
             required
-            pattern="\d{6}"
             maxLength="6"
+            pattern="\d{6}"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Enter 6-digit pincode"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading ? 'Updating...' : 'Update Profile'}
-        </button>
+        <div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loading ? 'Updating...' : 'Update Profile'}
+          </button>
+        </div>
       </form>
     </div>
   );
