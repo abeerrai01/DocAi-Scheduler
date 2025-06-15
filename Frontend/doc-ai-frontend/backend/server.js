@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const Appointment = require('./models/Appointment');
+const Profile = require('./models/Profile');
 require('dotenv').config();
 
 const app = express();
@@ -82,8 +83,8 @@ const authenticateToken = (req, res, next) => {
 // Routes
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, password, name, age, role } = req.body;
-    console.log('Registration attempt:', { username, name, age, role });
+    const { username, password, name, age, role, pincode, specialization } = req.body;
+    console.log('Registration attempt:', { username, name, age, role, specialization });
 
     // Validate required fields
     if (!username || !password || !name || !age || !role) {
@@ -112,11 +113,25 @@ app.post('/api/auth/register', async (req, res) => {
       password,
       name,
       age,
-      role
+      role,
+      pincode,
+      specialization: role === 'doctor' ? specialization : undefined
     });
 
     await user.save();
     console.log('User registered successfully:', username);
+
+    // Create profile for the user
+    const profile = new Profile({
+      userId: user._id,
+      username: user.username,
+      name: user.name,
+      age: user.age,
+      pincode: user.pincode
+    });
+
+    await profile.save();
+    console.log('Profile created successfully for user:', username);
 
     // Generate token
     const token = jwt.sign(
@@ -132,7 +147,8 @@ app.post('/api/auth/register', async (req, res) => {
         username: user.username,
         name: user.name,
         age: user.age,
-        role: user.role
+        role: user.role,
+        specialization: user.specialization
       }
     });
   } catch (error) {
@@ -185,9 +201,10 @@ app.post('/api/auth/login', async (req, res) => {
       role: user.role
     };
 
-    // Add isAvailable only for doctors
+    // Add isAvailable and specialization for doctors
     if (user.role === 'doctor') {
       userResponse.isAvailable = user.isAvailable;
+      userResponse.specialization = user.specialization;
     }
 
     console.log('Login successful:', { userId: user._id, role: user.role });
@@ -353,8 +370,8 @@ app.get('/api/doctors/:doctorId/appointments', authenticateToken, async (req, re
     console.log('Fetching appointments for doctor:', req.params.doctorId);
     
     const appointments = await Appointment.find({ doctorId: req.params.doctorId })
-      .populate('patientId', 'name email')
-      .populate('doctorId', 'name email')
+      .populate('patientId', 'name age')
+      .populate('doctorId', 'name')
       .sort({ date: 1 });
 
     console.log('Found appointments:', appointments);
@@ -385,67 +402,87 @@ app.get('/api/appointments', authenticateToken, async (req, res) => {
   }
 });
 
-// Update profile endpoint
+// Profile routes
+app.get('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching profile for user:', req.user.userId);
+    const profile = await Profile.findOne({ userId: req.user.userId });
+    if (!profile) {
+      // If profile doesn't exist, create one from user data
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      const newProfile = new Profile({
+        userId: user._id,
+        username: user.username,
+        name: user.name,
+        age: user.age,
+        pincode: user.pincode
+      });
+      
+      await newProfile.save();
+      return res.json(newProfile);
+    }
+    res.json(profile);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Error fetching profile' });
+  }
+});
+
 app.put('/api/profile', authenticateToken, async (req, res) => {
   try {
-    console.log('Profile update request received:', {
-      userId: req.user.id,
-      body: req.body
-    });
-
-    if (!req.user || !req.user.id) {
-      console.log('No user ID in request');
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-
     const { name, age, pincode } = req.body;
-
-    // Find user first to get username
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      console.log('User not found for ID:', req.user.id);
-      return res.status(404).json({ message: 'User not found' });
+    
+    // Validate input
+    if (!name || !age || !pincode) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Set default values if not provided
-    const updateData = {
-      name: name || user.username, // Use username as default name
-      age: age ? Number(age) : 20,
-      pincode: pincode || '000000'
-    };
-
-    // Validate age
-    if (isNaN(updateData.age) || updateData.age < 0 || updateData.age > 120) {
-      console.log('Invalid age:', updateData.age);
-      return res.status(400).json({ message: 'Age must be between 0 and 120' });
+    if (isNaN(age) || age < 0 || age > 120) {
+      return res.status(400).json({ message: 'Invalid age' });
     }
 
-    // Validate pincode
-    if (!/^\d{6}$/.test(updateData.pincode)) {
-      console.log('Invalid pincode:', updateData.pincode);
+    if (!/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ message: 'Pincode must be 6 digits' });
     }
 
-    // Update user fields
-    user.name = updateData.name;
-    user.age = updateData.age;
-    user.pincode = updateData.pincode;
+    // Find and update profile
+    const profile = await Profile.findOneAndUpdate(
+      { userId: req.user.userId },
+      { 
+        name,
+        age: parseInt(age),
+        pincode
+      },
+      { new: true, runValidators: true }
+    );
 
-    // Save changes
-    await user.save();
-    console.log('Profile updated successfully for user:', user.username);
+    if (!profile) {
+      // If profile doesn't exist, create one
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
 
-    // Return updated user without password
-    res.json({
-      message: 'Profile updated successfully',
-      user: user.getPublicProfile()
-    });
-  } catch (error) {
-    console.error('Profile update error:', error);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
+      const newProfile = new Profile({
+        userId: user._id,
+        username: user.username,
+        name,
+        age: parseInt(age),
+        pincode
+      });
+
+      await newProfile.save();
+      return res.json(newProfile);
     }
-    res.status(500).json({ message: 'Failed to update profile' });
+
+    res.json(profile);
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Error updating profile' });
   }
 });
 

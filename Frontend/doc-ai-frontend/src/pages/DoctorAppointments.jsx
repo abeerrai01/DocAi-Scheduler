@@ -20,29 +20,13 @@ const DoctorAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      console.log('Fetching appointments for doctor:', user._id);
       const response = await api.get(`/doctors/${user._id}/appointments`);
-      console.log('Appointments response:', response.data);
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      setError('Failed to fetch appointments');
+      setError('Failed to fetch appointments. Please try again later.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async (appointmentId, newStatus) => {
-    try {
-      console.log('Updating appointment status:', { appointmentId, newStatus });
-      await api.put(`/appointments/${appointmentId}`, {
-        status: newStatus
-      });
-      console.log('Status updated successfully');
-      fetchAppointments(); // Refresh the list
-    } catch (error) {
-      console.error('Error updating appointment:', error);
-      setError('Failed to update appointment status');
     }
   };
 
@@ -53,6 +37,13 @@ const DoctorAppointments = () => {
       </div>
     );
   }
+
+  const formatSymptoms = (symptoms) => {
+    if (!symptoms) return '';
+    if (Array.isArray(symptoms)) return symptoms.join(', ');
+    if (typeof symptoms === 'string') return symptoms;
+    return '';
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -94,14 +85,10 @@ const DoctorAppointments = () => {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Patient Email:</span>{' '}
-                {appointment.patientId?.email || 'N/A'}
-              </p>
-              {appointment.symptoms && appointment.symptoms.length > 0 && (
+              {appointment.symptoms && (
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Symptoms:</span>{' '}
-                  {appointment.symptoms.join(', ')}
+                  {formatSymptoms(appointment.symptoms)}
                 </p>
               )}
               <p className="text-sm text-gray-600">
@@ -112,20 +99,9 @@ const DoctorAppointments = () => {
 
             <div className="flex space-x-2">
               {appointment.status === 'scheduled' && (
-                <>
-                  <button
-                    onClick={() => handleStatusUpdate(appointment._id, 'completed')}
-                    className="flex-1 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    Mark Complete
-                  </button>
-                  <button
-                    onClick={() => handleStatusUpdate(appointment._id, 'cancelled')}
-                    className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    Cancel
-                  </button>
-                </>
+                <span className="text-sm text-gray-500">
+                  Appointment is scheduled
+                </span>
               )}
             </div>
           </div>

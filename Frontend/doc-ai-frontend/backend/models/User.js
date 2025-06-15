@@ -37,6 +37,12 @@ const userSchema = new mongoose.Schema({
     enum: ['patient', 'doctor'],
     default: 'patient'
   },
+  specialization: {
+    type: String,
+    required: function() {
+      return this.role === 'doctor';
+    }
+  },
   email: {
     type: String,
     sparse: true,
@@ -62,12 +68,15 @@ const userSchema = new mongoose.Schema({
       ret.id = ret._id;
       delete ret._id;
       
-      // Only include isAvailable for doctors
+      // Only include isAvailable and specialization for doctors
       if (ret.role !== 'doctor') {
         delete ret.isAvailable;
+        delete ret.specialization;
       } else {
         // Ensure isAvailable is a boolean for doctors
         ret.isAvailable = Boolean(ret.isAvailable);
+        // Ensure specialization is included for doctors
+        ret.specialization = ret.specialization || 'General Medicine';
       }
       
       return ret;
