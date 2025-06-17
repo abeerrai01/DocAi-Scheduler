@@ -18,20 +18,34 @@ const app = express();
 // CORS Configuration
 const allowedOrigins = [
   'https://doc-ai-4sty.onrender.com',
-  'https://doc-ai-scheduler.vercel.app',// ✅ new frontend
-  'https://docai-frontend-backend-production.up.railway.app', // fullstack
-  'https://docai-scheduler-production.up.railway.app', // backend
-  'https://doc-ai-ml.onrender.com' // ML backend
+  'https://doc-ai-scheduler.vercel.app',
+  'https://docai-frontend-backend-production.up.railway.app',
+  'https://docai-scheduler-production.up.railway.app',
+  'https://doc-ai-ml.onrender.com',
+  'http://localhost:5173', // Development
+  'http://localhost:3000'  // Development
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
   },
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -397,5 +411,4 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🌐 Allowed Origins: ${allowedOrigins.join(', ')}`);
 });
