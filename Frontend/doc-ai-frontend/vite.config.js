@@ -17,6 +17,7 @@ export default defineConfig({
       'doc-ai-scheduler.vercel.app',
       'docai-frontend-backend-production.up.railway.app',
       'docai-scheduler-production.up.railway.app',
+      'docai-scheduler-production.up.railway.app/api/patient/submit-all',
       'doc-ai-ml.onrender.com'
     ]
   }

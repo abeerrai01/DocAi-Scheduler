@@ -43,6 +43,27 @@ const userSchema = new mongoose.Schema({
       return this.role === 'doctor';
     }
   },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      required: function() {
+        return this.role === 'doctor';
+      },
+      validate: {
+        validator: function(v) {
+          return v.length === 2 && 
+                 v[0] >= -180 && v[0] <= 180 && 
+                 v[1] >= -90 && v[1] <= 90;
+        },
+        message: 'Invalid coordinates. Must be [longitude, latitude]'
+      }
+    }
+  },
   email: {
     type: String,
     sparse: true,
@@ -68,10 +89,11 @@ const userSchema = new mongoose.Schema({
       ret.id = ret._id;
       delete ret._id;
       
-      // Only include isAvailable and specialization for doctors
+      // Only include isAvailable, specialization, and location for doctors
       if (ret.role !== 'doctor') {
         delete ret.isAvailable;
         delete ret.specialization;
+        delete ret.location;
       } else {
         // Ensure isAvailable is a boolean for doctors
         ret.isAvailable = Boolean(ret.isAvailable);
@@ -84,8 +106,9 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Create index for username only
+// Create indexes
 userSchema.index({ username: 1 }, { unique: true });
+userSchema.index({ location: '2dsphere' }); // Create geospatial index
 
 // Set isAvailable based on role before saving
 userSchema.pre('save', async function(next) {
@@ -119,9 +142,10 @@ userSchema.methods.getPublicProfile = function() {
   userObject.id = userObject._id;
   delete userObject._id;
   
-  // Only include isAvailable for doctors
+  // Only include isAvailable and location for doctors
   if (userObject.role !== 'doctor') {
     delete userObject.isAvailable;
+    delete userObject.location;
   } else {
     // Ensure isAvailable is a boolean for doctors
     userObject.isAvailable = Boolean(userObject.isAvailable);

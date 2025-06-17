@@ -12,7 +12,11 @@ import java.util.*;
 @CrossOrigin(
     origins = {
         "http://localhost:5173",
-        "https://doc-ai-scheduler.vercel.app"
+        "https://doc-ai-scheduler.vercel.app",
+        "https://doc-ai-ml.onrender.com",
+        "https://docai-scheduler-production.up.railway.app",
+        "https://doc-ai-frontend-backend.vercel.app/"
+
     },
     allowCredentials = "true"
 )
@@ -46,7 +50,7 @@ public class PatientController {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(mlPayload, headers);
 
             // 5. Call ML API
-            String mlUrl = "http://localhost:5050/predict";
+            String mlUrl = "https://doc-ai-ml.onrender.com/predict";
             ResponseEntity<String> mlResponse = restTemplate.postForEntity(mlUrl, entity, String.class);
 
             // 6. Return result

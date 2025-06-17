@@ -92,7 +92,7 @@ const authenticateToken = (req, res, next) => {
 // Register
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, password, name, age, role, pincode, specialization } = req.body;
+    const { username, password, name, age, role, pincode, specialization, location } = req.body;
 
     if (!username || !password || !name || !age || !role)
       return res.status(400).json({ message: 'All fields are required' });
@@ -107,6 +107,13 @@ app.post('/api/auth/register', async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: 'Username already exists' });
 
+    // Validate location for doctors
+    if (role === 'doctor') {
+      if (!location || !location.coordinates || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+        return res.status(400).json({ message: 'Invalid location data for doctor' });
+      }
+    }
+
     const user = new User({
       username,
       password,
@@ -114,7 +121,8 @@ app.post('/api/auth/register', async (req, res) => {
       age,
       role,
       pincode,
-      specialization: role === 'doctor' ? specialization : undefined
+      specialization: role === 'doctor' ? specialization : undefined,
+      location: role === 'doctor' ? location : undefined
     });
     await user.save();
 
@@ -137,7 +145,8 @@ app.post('/api/auth/register', async (req, res) => {
         name: user.name,
         age: user.age,
         role: user.role,
-        specialization: user.specialization
+        specialization: user.specialization,
+        location: user.location
       }
     });
   } catch (error) {
@@ -289,6 +298,48 @@ app.get('/api/appointments', authenticateToken, async (req, res) => {
     .sort({ createdAt: -1 });
 
   res.json(appointments);
+});
+
+// Find nearby doctors
+app.get('/api/doctors/nearby', async (req, res) => {
+  try {
+    const { latitude, longitude, maxDistance = 50000 } = req.query; // maxDistance in meters, default 50km
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: 'Location coordinates are required' });
+    }
+
+    const doctors = await User.find({
+      role: 'doctor',
+      isAvailable: true,
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(longitude), parseFloat(latitude)]
+          },
+          $maxDistance: parseInt(maxDistance)
+        }
+      }
+    })
+    .select('name username specialization location')
+    .limit(10)
+    .lean();
+
+    // Transform the response to include distance
+    const transformedDoctors = doctors.map(doctor => ({
+      _id: doctor._id,
+      name: doctor.name,
+      specialization: doctor.specialization || 'General Medicine',
+      location: doctor.location,
+      isAvailable: true
+    }));
+
+    res.json(transformedDoctors);
+  } catch (error) {
+    console.error('Error finding nearby doctors:', error);
+    res.status(500).json({ message: 'Error finding nearby doctors' });
+  }
 });
 
 // =========================
