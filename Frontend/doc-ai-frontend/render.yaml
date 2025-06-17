@@ -6,6 +6,6 @@ services:
     startCommand: npm run preview
     envVars:
       - key: VITE_API_URL
-        value: https://doc-ai-scheduler-backend.onrender.com/api
+        value: https://docai-frontend-backend-production.up.railway.app/api
       - key: VITE_ML_MODEL_URL
-        value: https://doc-ai-scheduler-ml.onrender.com 
+        value: https://doc-ai-ml.onrender.com

@@ -34,6 +34,7 @@ const SymptomChecker = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
 
@@ -62,7 +63,7 @@ const SymptomChecker = () => {
       };
 
       // Step 1: Save to backend
-      const backendRes = await fetch('http://localhost:8080/api/patient/submit-all', {
+      const backendRes = await fetch('https://docai-scheduler-production.up.railway.app/api/patient/submit-all', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -76,7 +77,7 @@ const SymptomChecker = () => {
       }
 
       // Step 2: Call ML model API
-      const mlRes = await fetch('http://localhost:5050/predict', {
+      const mlRes = await fetch('https://doc-ai-ml.onrender.com/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -84,20 +85,24 @@ const SymptomChecker = () => {
         body: JSON.stringify({ symptoms: combinedSymptoms })
       });
 
+      const mlData = await mlRes.json();
+
       if (!mlRes.ok) {
-        throw new Error('Failed to fetch prediction from ML model');
+        throw new Error(mlData.message || 'Failed to fetch prediction from ML model');
       }
 
-      const mlData = await mlRes.json();
-      console.log('ML Prediction:', mlData); // Debug log
+      // Ensure predicted_risk is a string (not array)
+      const predictedRisk = Array.isArray(mlData.predicted_risk)
+        ? mlData.predicted_risk[0]
+        : mlData.predicted_risk;
 
       // Step 3: Navigate to results with ML data
       navigate('/symptom-results', {
         state: {
           modelOutput: {
             confidence: mlData.confidence,
-            input_symptoms: mlData.input_symptoms,
-            predicted_risk: mlData.predicted_risk,
+            input_symptoms: mlData.input_symptoms || mlData.symptoms,
+            predicted_risk: predictedRisk,
             recommend_doctor: mlData.recommend_doctor,
             treatment: mlData.treatment
           },
@@ -114,7 +119,7 @@ const SymptomChecker = () => {
       });
 
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err.message || 'An error occurred. Please try again.');
       console.error('Symptom check error:', err);
     } finally {
       setLoading(false);
@@ -159,6 +164,7 @@ const SymptomChecker = () => {
                     <label className="block text-sm font-medium text-gray-700">Age</label>
                     <input
                       type="number"
+                      min="0"
                       value={patientAge}
                       onChange={(e) => setPatientAge(e.target.value)}
                       className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md shadow-sm"

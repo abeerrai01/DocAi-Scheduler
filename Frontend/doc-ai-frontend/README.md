@@ -72,8 +72,8 @@ npm start
 ```
 
 The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5001
+- Frontend: - https://doc-ai-scheduler.vercel.app
+- Backend API: https://docai-frontend-backend-production.up.railway.app
 
 ## API Endpoints
 

@@ -15,12 +15,12 @@ const Footer = () => {
             >
               Disclaimer
             </Link>
-            <a 
-              href="mailto:support@docai.com" 
+            <Link 
+              to="/about" 
               className="text-gray-400 hover:text-gray-500 transition-colors duration-200"
             >
-              Contact Us
-            </a>
+              About Us
+            </Link>
           </div>
         </div>
       </div>

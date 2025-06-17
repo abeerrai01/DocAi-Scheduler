@@ -18,7 +18,7 @@ const Appointments = () => {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [appointmentReason, setAppointmentReason] = useState('');
+  const [appointmentReason, setAppointmentReason] = useState('regular');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -213,85 +213,162 @@ const Appointments = () => {
               </ul>
             </div>
           ) : (
-            <div className="bg-white shadow sm:rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Book an Appointment</h2>
+            <div className="space-y-12">
+              {/* Book New Appointment Section */}
+              <div className="bg-white shadow sm:rounded-lg">
+                <div className="px-4 py-5 sm:p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Book a New Appointment</h2>
 
-                {error && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                    {error}
-                  </div>
-                )}
+                  {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                      {error}
+                    </div>
+                  )}
 
-                <form onSubmit={handleBookAppointment} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Select Doctor</label>
-                    <select
-                      value={selectedDoctor || ''}
-                      onChange={(e) => setSelectedDoctor(e.target.value)}
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      required
-                    >
-                      <option value="">Select a doctor</option>
-                      {doctors.map((doctor) => (
-                        <option key={doctor._id} value={doctor._id}>
-                          Dr. {doctor.name}
-                        </option>
+                  <form onSubmit={handleBookAppointment} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Select Doctor</label>
+                      <select
+                        value={selectedDoctor || ''}
+                        onChange={(e) => setSelectedDoctor(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        required
+                      >
+                        <option value="">Select a doctor</option>
+                        {doctors.map((doctor) => (
+                          <option key={doctor._id} value={doctor._id}>
+                            Dr. {doctor.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Date</label>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Time</label>
+                      <select
+                        value={selectedTime}
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        required
+                      >
+                        <option value="">Select a time</option>
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Reason for Visit</label>
+                      <div className="mt-2 space-y-4">
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="regular"
+                            name="appointmentType"
+                            value="regular"
+                            checked={appointmentReason === "regular"}
+                            onChange={(e) => setAppointmentReason(e.target.value)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                          />
+                          <label htmlFor="regular" className="ml-3 block text-sm font-medium text-gray-700">
+                            Regular Check-up
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="emergency"
+                            name="appointmentType"
+                            value="emergency"
+                            checked={appointmentReason === "emergency"}
+                            onChange={(e) => setAppointmentReason(e.target.value)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                          />
+                          <label htmlFor="emergency" className="ml-3 block text-sm font-medium text-gray-700">
+                            Emergency
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        {submitting ? 'Booking...' : 'Book Appointment'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              {/* My Appointments Section */}
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h3>
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  {appointments.length > 0 ? (
+                    <ul className="divide-y divide-gray-200">
+                      {appointments.map((appointment) => (
+                        <li key={appointment._id} className="px-4 py-4 sm:px-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-indigo-600 truncate">
+                                Doctor: Dr. {appointment.doctorId?.name || 'Unknown'}
+                              </p>
+                              <p className="mt-2 flex items-center text-sm text-gray-500">
+                                <span className="truncate">
+                                  Date: {new Date(appointment.date).toLocaleDateString()}
+                                </span>
+                              </p>
+                              <p className="mt-2 flex items-center text-sm text-gray-500">
+                                <span className="truncate">
+                                  Time: {appointment.time}
+                                </span>
+                              </p>
+                              <p className="mt-2 flex items-center text-sm text-gray-500">
+                                <span className="truncate">
+                                  Reason: {appointment.reason}
+                                </span>
+                              </p>
+                              <p className="mt-2 flex items-center text-sm">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                  ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' : ''}
+                                  ${appointment.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' : ''}
+                                  ${appointment.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                                  ${appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}
+                                `}>
+                                  {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </li>
                       ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Date</label>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <select
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      required
-                    >
-                      <option value="">Select a time</option>
-                      <option value="09:00">9:00 AM</option>
-                      <option value="10:00">10:00 AM</option>
-                      <option value="11:00">11:00 AM</option>
-                      <option value="14:00">2:00 PM</option>
-                      <option value="15:00">3:00 PM</option>
-                      <option value="16:00">4:00 PM</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Reason for Visit</label>
-                    <textarea
-                      value={appointmentReason}
-                      onChange={(e) => setAppointmentReason(e.target.value)}
-                      rows={3}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      {submitting ? 'Booking...' : 'Book Appointment'}
-                    </button>
-                  </div>
-                </form>
+                    </ul>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No appointments found</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

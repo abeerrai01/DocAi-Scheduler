@@ -13,6 +13,7 @@ import SymptomChecker from './pages/SymptomChecker';
 import SymptomResults from './pages/SymptomResults';
 import Profile from './pages/Profile';
 import Disclaimer from './pages/Disclaimer';
+import AboutUs from './pages/AboutUs';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -40,6 +41,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/disclaimer" element={<Disclaimer />} />
+      <Route path="/about" element={<AboutUs />} />
 
       {/* Protected Routes */}
       <Route
@@ -107,10 +109,12 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
           <main className="flex-grow">
-            <AppRoutes />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <AppRoutes />
+            </div>
           </main>
           <Footer />
         </div>

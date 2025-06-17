@@ -39,7 +39,7 @@ A modern web application for AI-powered medical appointment scheduling.
 
 3. Create a `.env` file in the root directory and add:
    ```
-   REACT_APP_API_URL=http://localhost:8080
+   REACT_APP_API_URL=https://docai-frontend-backend-production.up.railway.app
    ```
 
 4. Start the development server:
@@ -47,7 +47,7 @@ A modern web application for AI-powered medical appointment scheduling.
    npm start
    ```
 
-The application will be available at `http://localhost:3000`
+The application will be available at `- https://doc-ai-scheduler.vercel.app`
 
 ## Project Structure
 

@@ -21,6 +21,7 @@ const DoctorAppointments = () => {
   const fetchAppointments = async () => {
     try {
       const response = await api.get(`/doctors/${user._id}/appointments`);
+      console.log('Fetched appointments:', response.data);
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -93,7 +94,7 @@ const DoctorAppointments = () => {
               )}
               <p className="text-sm text-gray-600">
                 <span className="font-medium">Type:</span>{' '}
-                {appointment.isEmergency ? 'Emergency' : 'Regular Checkup'}
+                {appointment.reason === 'emergency' ? 'Emergency' : 'Regular Checkup'}
               </p>
             </div>
 

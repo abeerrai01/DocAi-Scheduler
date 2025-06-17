@@ -46,7 +46,7 @@ const SymptomForm = ({ onRiskAssessment }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8080/api/predict', {
+      const response = await axios.post('https://docai-scheduler-production.up.railway.app/api/predict', {
         symptoms: selectedSymptoms,
       });
 
