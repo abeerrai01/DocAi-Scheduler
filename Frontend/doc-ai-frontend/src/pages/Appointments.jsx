@@ -7,6 +7,9 @@ import NearbyDoctors from '../components/NearbyDoctors';
 const Appointments = () => {
   const { user, isAuthenticated } = useAuth();
   const role = user?.role;
+  const specialization = user?.specialization;
+  const location = user?.location;
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,8 +31,12 @@ const Appointments = () => {
 
     const initializeData = async () => {
       try {
-        await Promise.all([fetchNearbyDoctors(), fetchAppointments()]);
+        await Promise.all([
+          fetchNearbyDoctors(),
+          fetchAppointments()
+        ]);
       } catch (err) {
+        console.error('Error initializing data:', err);
         setError('Failed to load initial data. Please refresh the page.');
       }
     };
@@ -48,10 +55,12 @@ const Appointments = () => {
         (position) => {
           resolve({
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            longitude: position.coords.longitude
           });
         },
-        (error) => reject(error)
+        (error) => {
+          reject(error);
+        }
       );
     });
   };
@@ -64,18 +73,18 @@ const Appointments = () => {
         params: {
           latitude: location.latitude,
           longitude: location.longitude,
-          maxDistance: 50000,
-        },
+          maxDistance: 50000
+        }
       });
 
       const availableDoctors = response.data
-        .filter((doctor) => Boolean(doctor.isAvailable))
-        .map((doctor) => ({
+        .filter(doctor => Boolean(doctor.isAvailable))
+        .map(doctor => ({
           _id: doctor._id,
           name: doctor.name,
           specialization: doctor.specialization || 'General Medicine',
           isAvailable: Boolean(doctor.isAvailable),
-          location: doctor.location,
+          location: doctor.location
         }));
 
       setDoctors(availableDoctors);
@@ -117,8 +126,8 @@ const Appointments = () => {
         time: selectedTime,
         reason: appointmentReason,
         contact: contact,
-        specialization: role === 'doctor' ? user?.specialization : undefined,
-        location: role === 'doctor' ? user?.location : undefined,
+        specialization: role === 'doctor' ? specialization : undefined,
+        location: role === 'doctor' ? location : undefined
       };
 
       const response = await api.post('/appointments', appointmentData);
@@ -270,6 +279,7 @@ const Appointments = () => {
           </form>
         </div>
 
+        {/* Appointments List */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h2>
           {appointments.length > 0 ? (
