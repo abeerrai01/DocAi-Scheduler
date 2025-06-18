@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.File;
@@ -11,15 +13,17 @@ import java.io.File;
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     @Autowired
     private JavaMailSender mailSender;
 
     public void sendAppointmentSlip(String toEmail, File pdfFile) throws MessagingException {
-        System.out.println("=== EMAIL SERVICE DEBUG ===");
-        System.out.println("Attempting to send email to: " + toEmail);
-        System.out.println("PDF file: " + pdfFile.getAbsolutePath());
-        System.out.println("PDF exists: " + pdfFile.exists());
-        System.out.println("PDF size: " + pdfFile.length() + " bytes");
+        log.info("=== EMAIL SERVICE DEBUG ===");
+        log.info("Attempting to send email to: {}", toEmail);
+        log.info("PDF file: {}", pdfFile.getAbsolutePath());
+        log.info("PDF exists: {}", pdfFile.exists());
+        log.info("PDF size: {} bytes", pdfFile.length());
         
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -30,14 +34,13 @@ public class EmailService {
             helper.setText("Hi! Your appointment has been confirmed. Please find the attached slip.");
             helper.addAttachment("AppointmentSlip.pdf", pdfFile);
 
-            System.out.println("Email message prepared, attempting to send...");
+            log.info("Email message prepared, attempting to send...");
             mailSender.send(message);
-            System.out.println("✅ Email sent successfully!");
+            log.info("✅ Email sent successfully!");
         } catch (Exception e) {
-            System.out.println("❌ Email sending failed: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ Email sending failed: {}", e.getMessage(), e);
             throw e;
         }
-        System.out.println("=== EMAIL SERVICE COMPLETED ===");
+        log.info("=== EMAIL SERVICE COMPLETED ===");
     }
 } 

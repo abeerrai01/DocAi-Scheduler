@@ -6,6 +6,8 @@ import org.doc.Repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +15,8 @@ import java.io.File;
 
 @Service
 public class AppointmentService {
+
+    private static final Logger log = LoggerFactory.getLogger(AppointmentService.class);
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -30,9 +34,17 @@ public class AppointmentService {
     private AppointmentRepository appointmentRepository;
 
     public void bookAppointment(AppointmentDTO dto) throws Exception {
-        System.out.println("=== APPOINTMENT SERVICE DEBUG ===");
-        System.out.println("Starting appointment booking process...");
-        System.out.println("DTO received: " + dto);
+        log.info("=== APPOINTMENT SERVICE DEBUG ===");
+        log.info("🔥 Starting appointment booking process...");
+        log.info("DTO received: {}", dto);
+        
+        // Check Railway environment
+        if (System.getenv("RAILWAY_ENVIRONMENT") != null) {
+            log.info("✅ Running on Railway environment");
+        }
+        if (System.getenv("RAILWAY_LOGGING") != null) {
+            log.info("✅ Railway Logging is enabled");
+        }
         
         // Convert DTO to Entity
         Appointment appointment = new Appointment();
@@ -42,50 +54,48 @@ public class AppointmentService {
         appointment.setReason(dto.reason);
         appointment.setContact(dto.contact);
         
-        System.out.println("Appointment entity created: " + appointment);
+        log.info("Appointment entity created: {}", appointment);
         
         // Save to database
-        System.out.println("Attempting to save to database...");
+        log.info("Attempting to save to database...");
         int result = appointmentRepository.save(appointment);
-        System.out.println("Database save result: " + result + " rows affected");
+        log.info("Database save result: {} rows affected", result);
         
         if (result > 0) {
-            System.out.println("✅ Database save successful!");
+            log.info("✅ Database save successful!");
         } else {
-            System.out.println("❌ Database save failed - no rows affected");
+            log.error("❌ Database save failed - no rows affected");
             throw new Exception("Failed to save appointment to database");
         }
 
         // Generate PDF
-        System.out.println("Generating PDF...");
+        log.info("Generating PDF...");
         File pdf = pdfGenerator.createPDF(dto);
-        System.out.println("PDF generated: " + pdf.getAbsolutePath());
-        System.out.println("PDF exists: " + pdf.exists());
-        System.out.println("PDF size: " + pdf.length() + " bytes");
+        log.info("PDF generated: {}", pdf.getAbsolutePath());
+        log.info("PDF exists: {}", pdf.exists());
+        log.info("PDF size: {} bytes", pdf.length());
 
         // Send notification based on contact type
         if (dto.contact.contains("@")) {
-            System.out.println("Contact contains @ - sending email to: " + dto.contact);
+            log.info("Contact contains @ - sending email to: {}", dto.contact);
             try {
                 emailService.sendAppointmentSlip(dto.contact, pdf);
-                System.out.println("✅ Email sent successfully to: " + dto.contact);
+                log.info("✅ Email sent successfully to: {}", dto.contact);
             } catch (Exception e) {
-                System.out.println("❌ Email sending failed: " + e.getMessage());
-                e.printStackTrace();
+                log.error("❌ Email sending failed: {}", e.getMessage(), e);
                 // Don't throw here - we still want to save the appointment
             }
         } else {
-            System.out.println("Contact is phone number - sending SMS to: " + dto.contact);
+            log.info("Contact is phone number - sending SMS to: {}", dto.contact);
             try {
                 smsService.sendAppointmentSummary(dto.contact, dto);
-                System.out.println("✅ SMS sent successfully to: " + dto.contact);
+                log.info("✅ SMS sent successfully to: {}", dto.contact);
             } catch (Exception e) {
-                System.out.println("❌ SMS sending failed: " + e.getMessage());
-                e.printStackTrace();
+                log.error("❌ SMS sending failed: {}", e.getMessage(), e);
                 // Don't throw here - we still want to save the appointment
             }
         }
         
-        System.out.println("=== APPOINTMENT SERVICE COMPLETED ===");
+        log.info("=== APPOINTMENT SERVICE COMPLETED ===");
     }
 } 
