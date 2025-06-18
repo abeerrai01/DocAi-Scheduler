@@ -46,9 +46,9 @@ const AppointmentScheduler = () => {
 
     try {
       const response = await api.post('/appointments', formData);
-      navigate('/dashboard', { 
-        state: { 
-          message: 'Appointment scheduled successfully!' 
+      navigate('/dashboard', {
+        state: {
+          message: 'Appointment scheduled successfully!'
         }
       });
     } catch (error) {
@@ -167,4 +167,4 @@ const AppointmentScheduler = () => {
   );
 };
 
-export default AppointmentScheduler; 
+export default AppointmentScheduler;

@@ -121,23 +121,33 @@ app.post('/api/auth/register', async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: 'Username already exists' });
 
-    // Validate location for doctors
+    // Validate required fields for doctors
     if (role === 'doctor') {
+      if (!specialization || specialization.trim() === '') {
+        return res.status(400).json({ message: 'Specialization is required for doctors' });
+      }
       if (!location || !location.coordinates || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-        return res.status(400).json({ message: 'Invalid location data for doctor' });
+        return res.status(400).json({ message: 'Valid location data is required for doctors' });
       }
     }
 
-    const user = new User({
+    // Prepare user data
+    const userData = {
       username,
       password,
       name,
       age,
       role,
-      pincode,
-      specialization: role === 'doctor' ? specialization : undefined,
-      location: role === 'doctor' ? location : undefined
-    });
+      pincode: pincode || '000000'
+    };
+
+    // Add doctor-specific fields only if role is doctor
+    if (role === 'doctor') {
+      userData.specialization = specialization;
+      userData.location = location;
+    }
+
+    const user = new User(userData);
     await user.save();
 
     const profile = new Profile({

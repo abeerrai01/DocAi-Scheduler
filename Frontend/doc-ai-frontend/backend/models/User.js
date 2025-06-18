@@ -41,6 +41,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: function() {
       return this.role === 'doctor';
+    },
+    validate: {
+      validator: function(v) {
+        if (this.role === 'doctor') {
+          return v && v.trim().length > 0;
+        }
+        return true;
+      },
+      message: 'Specialization is required for doctors'
     }
   },
   location: {
@@ -56,11 +65,14 @@ const userSchema = new mongoose.Schema({
       },
       validate: {
         validator: function(v) {
-          return v.length === 2 && 
-                 v[0] >= -180 && v[0] <= 180 && 
-                 v[1] >= -90 && v[1] <= 90;
+          if (this.role === 'doctor') {
+            return v && Array.isArray(v) && v.length === 2 && 
+                   v[0] >= -180 && v[0] <= 180 && 
+                   v[1] >= -90 && v[1] <= 90;
+          }
+          return true;
         },
-        message: 'Invalid coordinates. Must be [longitude, latitude]'
+        message: 'Valid coordinates are required for doctors. Must be [longitude, latitude]'
       }
     }
   },
@@ -122,6 +134,26 @@ userSchema.pre('save', async function(next) {
   // Set isAvailable for doctors
   if (user.role === 'doctor' && user.isModified('role')) {
     user.isAvailable = false;
+  }
+  
+  // Ensure doctor-specific fields are properly set
+  if (user.role === 'doctor') {
+    // Ensure specialization is not empty
+    if (!user.specialization || user.specialization.trim() === '') {
+      return next(new Error('Specialization is required for doctors'));
+    }
+    
+    // Ensure location coordinates are valid
+    if (!user.location || !user.location.coordinates || 
+        !Array.isArray(user.location.coordinates) || 
+        user.location.coordinates.length !== 2) {
+      return next(new Error('Valid location coordinates are required for doctors'));
+    }
+  } else {
+    // For non-doctors, remove doctor-specific fields
+    user.specialization = undefined;
+    user.location = undefined;
+    user.isAvailable = undefined;
   }
   
   next();
