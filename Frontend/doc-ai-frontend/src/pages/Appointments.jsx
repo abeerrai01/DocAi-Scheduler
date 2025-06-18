@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import NearbyDoctors from '../components/NearbyDoctors';
+import axios from 'axios';
 
 const Appointments = () => {
   const { user, isAuthenticated } = useAuth();
@@ -130,7 +131,12 @@ const Appointments = () => {
 
       console.log('📨 Sending appointment data to backend:', appointmentData);
 
-      const response = await api.post('/appointments', appointmentData);
+      const response = await axios.post('https://docai-scheduler-production.up.railway.app/appointments', appointmentData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
 
       setSuccess('Appointment booked successfully!');
       setContact('');

@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import api from '../config/api';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const AppointmentForm = ({ onAppointmentBooked }) => {
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,13 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
 
       console.log('📨 Sending appointment data to backend:', appointmentData);
 
-      const response = await api.post('/appointments', appointmentData);
+      // Use absolute URL to ensure it hits the Railway backend
+      const response = await axios.post('https://docai-scheduler-production.up.railway.app/appointments', appointmentData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
 
       toast.success('Appointment booked successfully!');
       onAppointmentBooked(response.data);

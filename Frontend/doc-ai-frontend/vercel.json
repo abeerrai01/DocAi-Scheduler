@@ -5,6 +5,14 @@
       "destination": "https://docai-scheduler-production.up.railway.app/api/:path*"
     },
     {
+      "source": "/appointments/:path*",
+      "destination": "https://docai-scheduler-production.up.railway.app/appointments/:path*"
+    },
+    {
+      "source": "/appointments",
+      "destination": "https://docai-scheduler-production.up.railway.app/appointments"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
