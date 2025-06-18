@@ -216,9 +216,70 @@ public class AppointmentController {
         }
     }
 
+    @PostMapping("/debug-dto")
+    public ResponseEntity<?> debugDto(@RequestBody AppointmentDTO dto) {
+        try {
+            log.info("=== DTO DEBUG ENDPOINT ===");
+            log.info("DTO received: {}", dto);
+            log.info("Doctor ID: '{}'", dto.getDoctorId());
+            log.info("Date: '{}'", dto.getDate());
+            log.info("Time: '{}'", dto.getTime());
+            log.info("Reason: '{}'", dto.getReason());
+            log.info("Contact: '{}'", dto.getContact());
+            
+            // Check if fields are null
+            boolean hasNulls = dto.getDoctorId() == null || dto.getDate() == null || 
+                              dto.getTime() == null || dto.getReason() == null || dto.getContact() == null;
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "DTO received",
+                "dto", dto.toString(),
+                "hasNulls", hasNulls,
+                "doctorId", dto.getDoctorId(),
+                "date", dto.getDate(),
+                "time", dto.getTime(),
+                "reason", dto.getReason(),
+                "contact", dto.getContact()
+            ));
+        } catch (Exception e) {
+            log.error("Debug DTO endpoint error: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         log.info("=== PING ENDPOINT CALLED ===");
         return ResponseEntity.ok("pong");
+    }
+
+    @PostMapping("/debug-map")
+    public ResponseEntity<?> debugMap(@RequestBody Map<String, Object> body) {
+        try {
+            log.info("=== MAP DEBUG ENDPOINT ===");
+            log.info("Raw JSON as Map: {}", body);
+            log.info("Map keys: {}", body.keySet());
+            
+            // Check each expected field
+            log.info("doctorId in map: '{}'", body.get("doctorId"));
+            log.info("date in map: '{}'", body.get("date"));
+            log.info("time in map: '{}'", body.get("time"));
+            log.info("reason in map: '{}'", body.get("reason"));
+            log.info("contact in map: '{}'", body.get("contact"));
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Map received",
+                "map", body,
+                "keys", body.keySet(),
+                "doctorId", body.get("doctorId"),
+                "date", body.get("date"),
+                "time", body.get("time"),
+                "reason", body.get("reason"),
+                "contact", body.get("contact")
+            ));
+        } catch (Exception e) {
+            log.error("Debug Map endpoint error: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 } 
