@@ -18,11 +18,11 @@ public class PDFGenerator {
         Document doc = new Document(pdf);
 
         doc.add(new Paragraph("🩺 Appointment Slip").setBold().setFontSize(20));
-        doc.add(new Paragraph("Doctor ID: " + dto.doctorId));
-        doc.add(new Paragraph("Date: " + dto.date));
-        doc.add(new Paragraph("Time: " + dto.time));
-        doc.add(new Paragraph("Reason: " + dto.reason));
-        doc.add(new Paragraph("Contact: " + dto.contact));
+        doc.add(new Paragraph("Doctor ID: " + dto.getDoctorId()));
+        doc.add(new Paragraph("Date: " + dto.getDate()));
+        doc.add(new Paragraph("Time: " + dto.getTime()));
+        doc.add(new Paragraph("Reason: " + dto.getReason()));
+        doc.add(new Paragraph("Contact: " + dto.getContact()));
 
         doc.close();
         return new File(filename);

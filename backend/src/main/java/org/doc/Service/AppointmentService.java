@@ -1,6 +1,8 @@
 package org.doc.Service;
 
 import org.doc.dto.AppointmentDTO;
+import org.doc.Entity.Appointment;
+import org.doc.Repository.AppointmentRepository;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -21,6 +23,10 @@ import java.io.ByteArrayOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.io.File;
 
 @Service
 public class AppointmentService {
@@ -29,6 +35,9 @@ public class AppointmentService {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -56,10 +65,38 @@ public class AppointmentService {
     public void bookAppointment(AppointmentDTO dto) throws Exception {
         log.info("🔥 Booking appointment with: {}", dto);
 
-        // 1. Insert into DB
+        // Convert DTO to Entity
+        Appointment appointment = new Appointment();
+        appointment.setDoctorId(dto.getDoctorId());
+        appointment.setDate(LocalDate.parse(dto.getDate()));
+        appointment.setTime(LocalTime.parse(dto.getTime()));
+        appointment.setReason(dto.getReason());
+        appointment.setContact(dto.getContact());
+        
+        log.info("Appointment entity created: {}", appointment);
+
+        // 1. Insert into DB using both JdbcTemplate and Repository
+        log.info("Attempting to save to database...");
+        
+        // Method 1: JdbcTemplate
         String sql = "INSERT INTO appointments (doctor_id, date, time, reason, contact) VALUES (?, ?, ?, ?, ?)";
         int rows = jdbc.update(sql, dto.getDoctorId(), dto.getDate(), dto.getTime(), dto.getReason(), dto.getContact());
-        log.info("📥 DB Insert complete, rows affected: {}", rows);
+        log.info("📥 JdbcTemplate DB Insert complete, rows affected: {}", rows);
+        
+        // Method 2: JPA Repository (backup)
+        try {
+            int repoResult = appointmentRepository.save(appointment);
+            log.info("📥 JPA Repository save result: {} rows affected", repoResult);
+        } catch (Exception e) {
+            log.warn("⚠️ JPA Repository save failed: {}", e.getMessage());
+        }
+        
+        if (rows > 0) {
+            log.info("✅ Database save successful!");
+        } else {
+            log.error("❌ Database save failed - no rows affected");
+            throw new Exception("Failed to save appointment to database");
+        }
 
         // 2. Generate PDF slip
         ByteArrayOutputStream out = new ByteArrayOutputStream();

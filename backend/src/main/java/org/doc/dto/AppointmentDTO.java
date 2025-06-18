@@ -1,12 +1,22 @@
 package org.doc.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class AppointmentDTO {
-    public String doctorId;
-    public String date;
-    public String time;
-    public String reason;
-    public String contact;
+    @JsonProperty("doctorId")
+    private String doctorId;
+
+    @JsonProperty("date")
+    private String date;
+
+    @JsonProperty("time")
+    private String time;
+
+    @JsonProperty("reason")
+    private String reason;
+
+    @JsonProperty("contact")
+    private String contact;
 } 

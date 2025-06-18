@@ -40,11 +40,23 @@ public class AppointmentController {
             log.info("=== APPOINTMENT CONTROLLER DEBUG ===");
             log.info("📨 POST /appointments endpoint hit");
             log.info("Request body received: {}", dto);
-            log.info("Doctor ID: {}", dto.doctorId);
-            log.info("Date: {}", dto.date);
-            log.info("Time: {}", dto.time);
-            log.info("Reason: {}", dto.reason);
-            log.info("Contact: {}", dto.contact);
+            
+            // Debug: Check each field individually
+            log.info("🔍 DEBUG: doctorId={}, date={}, time={}, reason={}, contact={}",
+                dto.getDoctorId(), dto.getDate(), dto.getTime(), dto.getReason(), dto.getContact());
+            
+            // Check if any fields are null
+            if (dto.getDoctorId() == null) log.warn("⚠️ doctorId is NULL!");
+            if (dto.getDate() == null) log.warn("⚠️ date is NULL!");
+            if (dto.getTime() == null) log.warn("⚠️ time is NULL!");
+            if (dto.getReason() == null) log.warn("⚠️ reason is NULL!");
+            if (dto.getContact() == null) log.warn("⚠️ contact is NULL!");
+            
+            log.info("Doctor ID: {}", dto.getDoctorId());
+            log.info("Date: {}", dto.getDate());
+            log.info("Time: {}", dto.getTime());
+            log.info("Reason: {}", dto.getReason());
+            log.info("Contact: {}", dto.getContact());
             
             // Check if service is injected
             if (appointmentService == null) {
@@ -93,7 +105,7 @@ public class AppointmentController {
     public ResponseEntity<?> testAppointment(@RequestBody AppointmentDTO dto) {
         try {
             log.info("Test endpoint called with DTO: {}", dto);
-            return ResponseEntity.ok("Test appointment received: " + dto.doctorId + " on " + dto.date);
+            return ResponseEntity.ok("Test appointment received: " + dto.getDoctorId() + " on " + dto.getDate());
         } catch (Exception e) {
             log.error("Test endpoint error: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
