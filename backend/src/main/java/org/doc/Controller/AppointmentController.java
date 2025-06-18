@@ -134,9 +134,9 @@ public class AppointmentController {
             AppointmentDTO dto = new AppointmentDTO();
             dto.setDoctorId("doc123");
             dto.setDate("2025-06-21");
-            dto.setTime("14:00");
+            dto.setTime("15:00");
             dto.setReason("Test appointment from Railway");
-            dto.setContact("abeerrai@gmail.com");
+            dto.setContact("theabeerrai@gmail.com");
 
             log.info("Created test DTO: {}", dto);
             
