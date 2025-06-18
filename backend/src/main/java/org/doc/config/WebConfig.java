@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")  // Allow all paths, not just /api/**
             .allowedOrigins(
                 "http://localhost:5173", // Vite dev server
                 "https://doc-ai-scheduler.vercel.app" // Your Vercel frontend

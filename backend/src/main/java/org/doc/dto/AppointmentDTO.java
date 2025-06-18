@@ -19,4 +19,16 @@ public class AppointmentDTO {
 
     @JsonProperty("contact")
     private String contact;
+
+    // Debug constructor
+    public AppointmentDTO() {
+        System.out.println("✅ AppointmentDTO constructor called");
+    }
+
+    // Debug toString
+    @Override
+    public String toString() {
+        return String.format("AppointmentDTO(doctorId='%s', date='%s', time='%s', reason='%s', contact='%s')",
+            doctorId, date, time, reason, contact);
+    }
 } 

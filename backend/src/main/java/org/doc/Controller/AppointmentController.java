@@ -181,4 +181,44 @@ public class AppointmentController {
             return ResponseEntity.status(500).body("❌ Debug failed: " + e.getMessage());
         }
     }
+
+    @PostMapping("/debug-json")
+    public ResponseEntity<?> debugJson(@RequestBody String rawJson) {
+        try {
+            log.info("=== JSON DEBUG ENDPOINT ===");
+            log.info("Raw JSON received: {}", rawJson);
+            
+            // Try to parse as AppointmentDTO
+            try {
+                AppointmentDTO dto = new AppointmentDTO();
+                log.info("Created new DTO instance: {}", dto);
+                
+                // Log the raw JSON for debugging
+                log.info("Raw JSON length: {}", rawJson.length());
+                log.info("Raw JSON content: '{}'", rawJson);
+                
+                return ResponseEntity.ok(Map.of(
+                    "message", "JSON received",
+                    "rawJson", rawJson,
+                    "jsonLength", rawJson.length(),
+                    "dtoCreated", dto != null
+                ));
+            } catch (Exception e) {
+                log.error("Error creating DTO: {}", e.getMessage(), e);
+                return ResponseEntity.status(500).body(Map.of(
+                    "error", "DTO creation failed",
+                    "message", e.getMessage()
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Debug JSON endpoint error: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        log.info("=== PING ENDPOINT CALLED ===");
+        return ResponseEntity.ok("pong");
+    }
 } 
