@@ -10,7 +10,10 @@ const AppointmentScheduler = () => {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     doctorId: '',
-    appointmentType: 'regular',
+    date: '',
+    time: '',
+    reason: '',
+    contact: '',
     symptoms: ''
   });
   const [doctors, setDoctors] = useState([]);
@@ -45,7 +48,18 @@ const AppointmentScheduler = () => {
     setError('');
 
     try {
-      const response = await api.post('/appointments', formData);
+      // Only send the fields that the backend expects
+      const appointmentData = {
+        doctorId: formData.doctorId,
+        date: formData.date,
+        time: formData.time,
+        reason: formData.reason,
+        contact: formData.contact
+      };
+
+      console.log('📨 Sending appointment data to backend:', appointmentData);
+
+      const response = await api.post('/appointments', appointmentData);
       navigate('/dashboard', {
         state: {
           message: 'Appointment scheduled successfully!'
@@ -131,6 +145,22 @@ const AppointmentScheduler = () => {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Brief description of your visit"
                 value={formData.reason}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
+                Email or Phone
+              </label>
+              <input
+                type="text"
+                id="contact"
+                name="contact"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Enter email or phone number"
+                value={formData.contact}
                 onChange={handleChange}
                 required
               />

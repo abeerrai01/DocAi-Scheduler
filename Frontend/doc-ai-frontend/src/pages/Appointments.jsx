@@ -125,10 +125,10 @@ const Appointments = () => {
         date: selectedDate,
         time: selectedTime,
         reason: appointmentReason,
-        contact: contact,
-        specialization: role === 'doctor' ? specialization : undefined,
-        location: role === 'doctor' ? location : undefined
+        contact: contact
       };
+
+      console.log('📨 Sending appointment data to backend:', appointmentData);
 
       const response = await api.post('/appointments', appointmentData);
 

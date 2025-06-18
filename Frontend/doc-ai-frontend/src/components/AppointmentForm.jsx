@@ -16,6 +16,10 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [contact, setContact] = useState('');
   const [symptoms, setSymptoms] = useState('');
 
   useEffect(() => {
@@ -36,18 +40,24 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!selectedDoctor) {
-      toast.warning('Please select a doctor');
+    if (!selectedDoctor || !selectedDate || !selectedTime || !reason || !contact) {
+      toast.warning('Please fill in all required fields');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await api.post('/appointments', {
+      const appointmentData = {
         doctorId: selectedDoctor,
-        appointmentType: 'regular',
-        symptoms: symptoms
-      });
+        date: selectedDate,
+        time: selectedTime,
+        reason: reason,
+        contact: contact
+      };
+
+      console.log('📨 Sending appointment data to backend:', appointmentData);
+
+      const response = await api.post('/appointments', appointmentData);
 
       toast.success('Appointment booked successfully!');
       onAppointmentBooked(response.data);
@@ -69,15 +79,6 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <TextField
             fullWidth
-            label="Symptoms"
-            value={symptoms}
-            onChange={(e) => setSymptoms(e.target.value)}
-            margin="normal"
-            required
-          />
-
-          <TextField
-            fullWidth
             select
             label="Select Doctor"
             value={selectedDoctor}
@@ -91,6 +92,70 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            fullWidth
+            type="date"
+            label="Date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            margin="normal"
+            required
+            InputLabelProps={{
+              shrink: true,
+            }}
+            inputProps={{
+              min: new Date().toISOString().split('T')[0]
+            }}
+          />
+
+          <TextField
+            fullWidth
+            select
+            label="Time"
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            margin="normal"
+            required
+          >
+            <MenuItem value="09:00">9:00 AM</MenuItem>
+            <MenuItem value="10:00">10:00 AM</MenuItem>
+            <MenuItem value="11:00">11:00 AM</MenuItem>
+            <MenuItem value="14:00">2:00 PM</MenuItem>
+            <MenuItem value="15:00">3:00 PM</MenuItem>
+            <MenuItem value="16:00">4:00 PM</MenuItem>
+          </TextField>
+
+          <TextField
+            fullWidth
+            label="Reason for Visit"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            margin="normal"
+            required
+            placeholder="Brief description of your visit"
+          />
+
+          <TextField
+            fullWidth
+            label="Email or Phone"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            margin="normal"
+            required
+            placeholder="Enter email or phone number"
+          />
+
+          <TextField
+            fullWidth
+            label="Symptoms (Optional)"
+            value={symptoms}
+            onChange={(e) => setSymptoms(e.target.value)}
+            margin="normal"
+            multiline
+            rows={3}
+            placeholder="Describe any symptoms you're experiencing"
+          />
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Button

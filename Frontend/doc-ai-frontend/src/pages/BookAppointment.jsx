@@ -11,6 +11,7 @@ const BookAppointment = () => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [reason, setReason] = useState('');
+  const [contact, setContact] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,15 +32,27 @@ const BookAppointment = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!selectedDoctor || !date || !time || !reason || !contact) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
     try {
-      const response = await api.post('/appointments', {
+      const appointmentData = {
         doctorId: selectedDoctor,
-        appointmentType: 'regular',
-        symptoms: reason
-      });
+        date: date,
+        time: time,
+        reason: reason,
+        contact: contact
+      };
+
+      console.log('📨 Sending appointment data to backend:', appointmentData);
+
+      const response = await api.post('/appointments', appointmentData);
 
       if (response.data) {
         navigate('/appointments');
@@ -47,6 +60,7 @@ const BookAppointment = () => {
         setError('Failed to book appointment');
       }
     } catch (err) {
+      console.error('Error booking appointment:', err);
       setError('Error connecting to server');
     } finally {
       setLoading(false);
@@ -127,6 +141,21 @@ const BookAppointment = () => {
                 rows={3}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Please describe your symptoms or reason for visit"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
+                Email or Phone
+              </label>
+              <input
+                type="text"
+                id="contact"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                required
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter email or phone number"
               />
             </div>
 
