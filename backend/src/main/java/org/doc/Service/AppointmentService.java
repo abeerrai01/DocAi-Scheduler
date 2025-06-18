@@ -57,21 +57,6 @@ public class AppointmentService {
     private final String AUTH_TOKEN = System.getenv("TWILIO_AUTH_TOKEN");
     private final String FROM_PHONE = System.getenv("TWILIO_PHONE_NUMBER");
 
-    @PostConstruct
-    public void initTwilio() {
-        log.info("=== SMS SERVICE INIT ===");
-        log.info("Initializing Twilio with Account SID: {}", ACCOUNT_SID);
-        log.info("Auth Token: {}", AUTH_TOKEN != null ? AUTH_TOKEN.substring(0, 4) + "..." : "null");
-        log.info("Twilio Phone Number: {}", FROM_PHONE);
-        try {
-            Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
-            log.info("✅ Twilio initialized successfully");
-        } catch (Exception e) {
-            log.error("❌ Failed to initialize Twilio: {}", e.getMessage());
-        }
-        log.info("=== SMS SERVICE INIT COMPLETED ===");
-    }
-
     public void bookAppointment(AppointmentDTO dto) {
         log.info("🔥 Booking appointment with: {}", dto);
         
