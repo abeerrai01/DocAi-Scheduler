@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 @Service
@@ -41,6 +42,15 @@ public class AppointmentService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private PDFGenerator pdfGenerator;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private SMSService smsService;
 
     // Twilio vars from env
     private final String ACCOUNT_SID = System.getenv("TWILIO_ACCOUNT_SID");
@@ -62,10 +72,11 @@ public class AppointmentService {
         log.info("=== SMS SERVICE INIT COMPLETED ===");
     }
 
-    public void bookAppointment(AppointmentDTO dto) throws Exception {
+    public void bookAppointment(AppointmentDTO dto) {
         log.info("🔥 Booking appointment with: {}", dto);
-
+        
         // Convert DTO to Entity
+        log.info("🚧 Creating appointment entity...");
         Appointment appointment = new Appointment();
         appointment.setDoctorId(dto.getDoctorId());
         appointment.setDate(LocalDate.parse(dto.getDate()));
@@ -76,7 +87,7 @@ public class AppointmentService {
         log.info("Appointment entity created: {}", appointment);
 
         // 1. Insert into DB using both JdbcTemplate and Repository
-        log.info("Attempting to save to database...");
+        log.info("🚧 About to insert into DB...");
         
         // Method 1: JdbcTemplate
         String sql = "INSERT INTO appointments (doctor_id, date, time, reason, contact) VALUES (?, ?, ?, ?, ?)";
@@ -85,41 +96,42 @@ public class AppointmentService {
         
         // Method 2: JPA Repository (backup)
         try {
+            log.info("🚧 Also trying JPA Repository save...");
             int repoResult = appointmentRepository.save(appointment);
             log.info("📥 JPA Repository save result: {} rows affected", repoResult);
         } catch (Exception e) {
             log.warn("⚠️ JPA Repository save failed: {}", e.getMessage());
         }
-        
-        if (rows > 0) {
-            log.info("✅ Database save successful!");
-        } else {
-            log.error("❌ Database save failed - no rows affected");
-            throw new Exception("Failed to save appointment to database");
+
+        // 2. Generate PDF
+        log.info("📄 Generating PDF...");
+        File pdf = null;
+        try {
+            pdf = pdfGenerator.createPDF(dto);
+            log.info("📄 PDF generated successfully: {}", pdf.getAbsolutePath());
+        } catch (Exception e) {
+            log.error("❌ PDF generation failed: {}", e.getMessage(), e);
         }
 
-        // 2. Generate PDF slip
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(out);
-        PdfDocument pdfDoc = new PdfDocument(writer);
-        Document document = new Document(pdfDoc);
-        document.add(new Paragraph("Appointment Slip"));
-        document.add(new Paragraph("Doctor ID: " + dto.getDoctorId()));
-        document.add(new Paragraph("Date: " + dto.getDate()));
-        document.add(new Paragraph("Time: " + dto.getTime()));
-        document.add(new Paragraph("Reason: " + dto.getReason()));
-        document.add(new Paragraph("Contact: " + dto.getContact()));
-        document.close();
-        log.info("📄 PDF generated for appointment");
-
-        // 3. Send email or SMS
-        if (dto.getContact().contains("@")) {
-            sendEmail(dto.getContact(), out.toByteArray());
-        } else {
-            sendSMS(dto);
+        // 3. Send Email/SMS
+        log.info("📧 Sending email...");
+        try {
+            if (dto.getContact().contains("@")) {
+                if (pdf != null) {
+                    emailService.sendAppointmentSlip(dto.getContact(), pdf);
+                    log.info("📧 Email sent successfully to: {}", dto.getContact());
+                } else {
+                    log.warn("⚠️ Cannot send email - PDF was not generated");
+                }
+            } else {
+                smsService.sendAppointmentSummary(dto.getContact(), dto);
+                log.info("📱 SMS sent successfully to: {}", dto.getContact());
+            }
+        } catch (Exception e) {
+            log.error("❌ Email/SMS sending failed: {}", e.getMessage(), e);
         }
 
-        log.info("✅ Booking process finished");
+        log.info("✅ Booking process finished successfully!");
     }
 
     private void sendEmail(String to, byte[] pdfBytes) throws Exception {

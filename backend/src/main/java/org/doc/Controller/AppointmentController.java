@@ -5,6 +5,7 @@ import org.doc.Service.AppointmentService;
 import org.doc.Repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ public class AppointmentController {
 
     @PostMapping
     public ResponseEntity<?> bookAppointment(@RequestBody AppointmentDTO dto) {
+        log.info("📨 [LIVE] /appointments POST request received at {}", System.currentTimeMillis());
         try {
             log.info("=== APPOINTMENT CONTROLLER DEBUG ===");
             log.info("📨 POST /appointments endpoint hit");
@@ -61,18 +63,23 @@ public class AppointmentController {
             // Check if service is injected
             if (appointmentService == null) {
                 log.error("❌ CRITICAL: AppointmentService is NULL!");
-                return ResponseEntity.status(500).body("Service not available");
+                return ResponseEntity.status(500).body("Internal server error: Service not available");
             }
-            log.info("✅ AppointmentService is available: {}", appointmentService.getClass().getName());
+            log.info("✅ AppointmentService is properly injected, calling bookAppointment...");
             
-            log.info("🚀 Calling appointmentService.bookAppointment()...");
+            // Call the service
             appointmentService.bookAppointment(dto);
-            log.info("✅ appointmentService.bookAppointment() completed successfully");
             
-            log.info("✅ Booking flow finished for contact: {}", dto.getContact());
-            log.info("=== APPOINTMENT CONTROLLER COMPLETED ===");
+            log.info("✅ Controller finished booking for {}", dto.getContact());
             
-            return ResponseEntity.ok("Appointment booked and slip sent!");
+            // Return detailed response
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Appointment booked successfully",
+                "doctorId", dto.getDoctorId(),
+                "date", dto.getDate(),
+                "time", dto.getTime(),
+                "contact", dto.getContact()
+            ));
         } catch (Exception e) {
             log.error("=== APPOINTMENT CONTROLLER ERROR ===");
             log.error("❌ Error occurred in bookAppointment: {}", e.getMessage(), e);
