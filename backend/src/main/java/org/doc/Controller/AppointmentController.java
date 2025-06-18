@@ -38,24 +38,34 @@ public class AppointmentController {
     public ResponseEntity<?> bookAppointment(@RequestBody AppointmentDTO dto) {
         try {
             log.info("=== APPOINTMENT CONTROLLER DEBUG ===");
-            log.info("Received appointment request: {}", dto);
+            log.info("📨 POST /appointments endpoint hit");
+            log.info("Request body received: {}", dto);
             log.info("Doctor ID: {}", dto.doctorId);
             log.info("Date: {}", dto.date);
             log.info("Time: {}", dto.time);
             log.info("Reason: {}", dto.reason);
             log.info("Contact: {}", dto.contact);
-            log.info("=====================================");
             
+            // Check if service is injected
+            if (appointmentService == null) {
+                log.error("❌ CRITICAL: AppointmentService is NULL!");
+                return ResponseEntity.status(500).body("Service not available");
+            }
+            log.info("✅ AppointmentService is available: {}", appointmentService.getClass().getName());
+            
+            log.info("🚀 Calling appointmentService.bookAppointment()...");
             appointmentService.bookAppointment(dto);
-            log.info("Appointment service completed successfully");
+            log.info("✅ appointmentService.bookAppointment() completed successfully");
             
             log.info("✅ Booking flow finished for contact: {}", dto.getContact());
+            log.info("=== APPOINTMENT CONTROLLER COMPLETED ===");
             
             return ResponseEntity.ok("Appointment booked and slip sent!");
         } catch (Exception e) {
             log.error("=== APPOINTMENT CONTROLLER ERROR ===");
-            log.error("Error occurred: {}", e.getMessage(), e);
-            log.error("=====================================");
+            log.error("❌ Error occurred in bookAppointment: {}", e.getMessage(), e);
+            log.error("Stack trace:", e);
+            log.error("=== APPOINTMENT CONTROLLER ERROR END ===");
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
@@ -113,6 +123,50 @@ public class AppointmentController {
         } catch (Exception e) {
             log.error("Error fetching appointments for contact {}: {}", contact, e.getMessage(), e);
             return ResponseEntity.status(500).body("Error fetching appointments: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/test-logic")
+    public ResponseEntity<String> testBooking() {
+        try {
+            log.info("🧪 TEST LOGIC ENDPOINT CALLED");
+            
+            AppointmentDTO dto = new AppointmentDTO();
+            dto.setDoctorId("doc123");
+            dto.setDate("2025-06-21");
+            dto.setTime("14:00");
+            dto.setReason("Test appointment from Railway");
+            dto.setContact("abeerrai@gmail.com");
+
+            log.info("Created test DTO: {}", dto);
+            
+            appointmentService.bookAppointment(dto);
+            
+            log.info("✅ Test booking logic executed successfully!");
+            return ResponseEntity.ok("✅ Booking logic executed! Check Railway logs for details.");
+        } catch (Exception e) {
+            log.error("❌ Test booking logic failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("❌ Test failed: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/debug/service")
+    public ResponseEntity<String> debugService() {
+        try {
+            log.info("🔍 DEBUG SERVICE ENDPOINT CALLED");
+            
+            if (appointmentService == null) {
+                log.error("❌ AppointmentService is NULL!");
+                return ResponseEntity.status(500).body("❌ AppointmentService is NULL!");
+            }
+            
+            log.info("✅ AppointmentService is properly injected");
+            log.info("AppointmentService class: {}", appointmentService.getClass().getName());
+            
+            return ResponseEntity.ok("✅ AppointmentService is properly injected. Class: " + appointmentService.getClass().getName());
+        } catch (Exception e) {
+            log.error("❌ Debug service failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("❌ Debug failed: " + e.getMessage());
         }
     }
 } 
