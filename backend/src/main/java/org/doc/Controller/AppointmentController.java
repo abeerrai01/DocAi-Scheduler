@@ -48,6 +48,9 @@ public class AppointmentController {
             
             appointmentService.bookAppointment(dto);
             log.info("Appointment service completed successfully");
+            
+            log.info("✅ Booking flow finished for contact: {}", dto.getContact());
+            
             return ResponseEntity.ok("Appointment booked and slip sent!");
         } catch (Exception e) {
             log.error("=== APPOINTMENT CONTROLLER ERROR ===");
