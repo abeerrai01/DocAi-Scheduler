@@ -15,14 +15,29 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     public void sendAppointmentSlip(String toEmail, File pdfFile) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        System.out.println("=== EMAIL SERVICE DEBUG ===");
+        System.out.println("Attempting to send email to: " + toEmail);
+        System.out.println("PDF file: " + pdfFile.getAbsolutePath());
+        System.out.println("PDF exists: " + pdfFile.exists());
+        System.out.println("PDF size: " + pdfFile.length() + " bytes");
+        
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-        helper.setTo(toEmail);
-        helper.setSubject("Your Appointment Slip");
-        helper.setText("Hi! Your appointment has been confirmed. Please find the attached slip.");
-        helper.addAttachment("AppointmentSlip.pdf", pdfFile);
+            helper.setTo(toEmail);
+            helper.setSubject("Your Appointment Slip");
+            helper.setText("Hi! Your appointment has been confirmed. Please find the attached slip.");
+            helper.addAttachment("AppointmentSlip.pdf", pdfFile);
 
-        mailSender.send(message);
+            System.out.println("Email message prepared, attempting to send...");
+            mailSender.send(message);
+            System.out.println("✅ Email sent successfully!");
+        } catch (Exception e) {
+            System.out.println("❌ Email sending failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+        System.out.println("=== EMAIL SERVICE COMPLETED ===");
     }
 } 

@@ -32,9 +32,23 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<?> bookAppointment(@RequestBody AppointmentDTO dto) {
         try {
+            System.out.println("=== APPOINTMENT CONTROLLER DEBUG ===");
+            System.out.println("Received appointment request: " + dto);
+            System.out.println("Doctor ID: " + dto.doctorId);
+            System.out.println("Date: " + dto.date);
+            System.out.println("Time: " + dto.time);
+            System.out.println("Reason: " + dto.reason);
+            System.out.println("Contact: " + dto.contact);
+            System.out.println("=====================================");
+            
             appointmentService.bookAppointment(dto);
+            System.out.println("Appointment service completed successfully");
             return ResponseEntity.ok("Appointment booked and slip sent!");
         } catch (Exception e) {
+            System.out.println("=== APPOINTMENT CONTROLLER ERROR ===");
+            System.out.println("Error occurred: " + e.getMessage());
+            e.printStackTrace(); // This will show the full stack trace
+            System.out.println("=====================================");
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
