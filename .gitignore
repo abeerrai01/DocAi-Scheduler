@@ -36,3 +36,24 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment and Sensitive Files ###
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.key
+*.pem
+*.p12
+*.jks
+secrets/
+credentials/
+
+### Logs ###
+*.log
+logs/
+
+### Temporary Files ###
+*.tmp
+*.temp
