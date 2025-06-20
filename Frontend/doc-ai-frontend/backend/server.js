@@ -312,9 +312,11 @@ app.get('/api/doctors/:doctorId/appointments', authenticateToken, async (req, re
 
 // Get logged-in user's appointments
 app.get('/api/appointments', authenticateToken, async (req, res) => {
+  const ObjectId = mongoose.Types.ObjectId;
+
   const query = req.user.role === 'doctor'
-    ? { doctorId: req.user._id }
-    : { patientId: req.user._id };
+    ? { doctorId: new ObjectId(req.user._id) }
+    : { patientId: new ObjectId(req.user._id) };
 
   const appointments = await Appointment.find(query)
     .populate('patientId', 'name username')
