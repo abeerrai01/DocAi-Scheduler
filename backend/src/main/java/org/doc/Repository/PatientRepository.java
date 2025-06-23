@@ -17,7 +17,7 @@ public class PatientRepository {
     }
 
     public String getSymptomsByName(String name) {
-        String sql = "SELECT symptoms FROM patients WHERE name = ?";
+        String sql = "SELECT symptoms FROM patients WHERE name = ? ORDER BY created_at DESC LIMIT 1";
         return jdbcTemplate.queryForObject(sql, new Object[]{name}, String.class);
     }
 }
