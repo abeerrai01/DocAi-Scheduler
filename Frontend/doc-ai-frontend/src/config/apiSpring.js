@@ -5,4 +5,9 @@ const apiSpring = axios.create({
   withCredentials: true,
 });
 
+const apiNode = axios.create({
+  baseURL: process.env.REACT_APP_NODE_API,
+  // ...
+});
+
 export default apiSpring; 
