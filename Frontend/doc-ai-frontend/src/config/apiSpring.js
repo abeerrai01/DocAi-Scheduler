@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiSpring = axios.create({
-  baseURL: 'https://docai-scheduler-production.up.railway.app/api',
+  baseURL: process.env.REACT_APP_SPRING_API,
   withCredentials: true,
 });
 
