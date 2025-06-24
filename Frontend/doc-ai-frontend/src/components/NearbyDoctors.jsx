@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 import { toast } from 'react-toastify';
 
 const NearbyDoctors = ({ onSelectDoctor }) => {
@@ -34,7 +34,7 @@ const NearbyDoctors = ({ onSelectDoctor }) => {
       setError('');
 
       const location = await getCurrentLocation();
-      const response = await api.get('/doctors/nearby', {
+      const response = await apiNode.get('/doctors/nearby', {
         params: {
           latitude: location.latitude,
           longitude: location.longitude

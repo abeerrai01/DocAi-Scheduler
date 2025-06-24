@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const DoctorAppointments = () => {
   const { user } = useAuth();
@@ -20,7 +20,7 @@ const DoctorAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await api.get(`/doctors/${user._id}/appointments`);
+      const response = await apiNode.get(`/doctors/${user._id}/appointments`);
       console.log('Fetched appointments:', response.data);
       setAppointments(response.data);
     } catch (error) {

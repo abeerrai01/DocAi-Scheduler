@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const AuthContext = createContext(null);
 
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await apiNode.post('/auth/register', userData);
       return response.data;
     } catch (error) {
       console.error('Registration error:', error);

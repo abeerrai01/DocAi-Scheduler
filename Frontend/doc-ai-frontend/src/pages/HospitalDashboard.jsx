@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const HospitalDashboard = () => {
   const [doctors, setDoctors] = useState([]);
@@ -17,10 +17,10 @@ const HospitalDashboard = () => {
       setLoading(true);
       try {
         // Fetch doctors
-        const docRes = await api.get(`/hospitals/${hospitalId}/doctors`);
+        const docRes = await apiNode.get(`/hospitals/${hospitalId}/doctors`);
         setDoctors(docRes.data);
         // Fetch ambulances
-        const ambRes = await api.get(`/hospitals/${hospitalId}/ambulances`);
+        const ambRes = await apiNode.get(`/hospitals/${hospitalId}/ambulances`);
         setAmbulances(ambRes.data);
       } catch (err) {
         setError('Failed to load hospital data');
@@ -34,7 +34,7 @@ const HospitalDashboard = () => {
   const handleToggleAmbulance = () => {
     const newAvailable = ambulances.available === ambulances.total ? 0 : ambulances.total;
     setAmbulances(a => ({ ...a, available: newAvailable }));
-    api.put(`/hospitals/${hospitalId}/ambulances`, { available: newAvailable })
+    apiNode.put(`/hospitals/${hospitalId}/ambulances`, { available: newAvailable })
       .catch(() => setError('Failed to update ambulance availability'));
   };
 

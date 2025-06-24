@@ -9,7 +9,7 @@ import {
   MenuItem,
   CircularProgress,
 } from '@mui/material';
-import api from '../config/api';
+import apiSpring from '../config/apiSpring';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
@@ -27,7 +27,7 @@ const AppointmentForm = ({ onAppointmentBooked }) => {
     // Fetch available doctors
     const fetchDoctors = async () => {
       try {
-        const response = await api.get('/doctors');
+        const response = await apiSpring.get('/doctors');
         setDoctors(response.data);
       } catch (error) {
         console.error('Error fetching doctors:', error);

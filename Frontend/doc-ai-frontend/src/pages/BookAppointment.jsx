@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiSpring from '../config/apiSpring';
 import axios from 'axios';
 
 const BookAppointment = () => {
@@ -22,7 +22,7 @@ const BookAppointment = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await api.get('/doctors');
+      const response = await apiSpring.get('/doctors');
       // Filter only available doctors
       const availableDoctors = response.data.filter(doctor => doctor.isAvailable);
       setDoctors(availableDoctors);

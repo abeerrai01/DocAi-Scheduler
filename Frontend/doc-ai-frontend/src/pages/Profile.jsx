@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -22,7 +22,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get('/api/profile');
+      const response = await apiNode.get('/api/profile');
       const profile = response.data;
       setFormData({
         username: profile.username,
@@ -51,7 +51,7 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      const response = await api.put('/api/profile', {
+      const response = await apiNode.put('/api/profile', {
         name: formData.name,
         age: parseInt(formData.age),
         pincode: formData.pincode

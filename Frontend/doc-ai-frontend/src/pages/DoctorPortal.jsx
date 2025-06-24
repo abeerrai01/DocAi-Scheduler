@@ -9,7 +9,7 @@ import {
   Button,
   CircularProgress,
 } from '@mui/material';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +40,7 @@ const DoctorPortal = () => {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/appointments');
+      const response = await apiNode.get('/appointments');
       console.log('Fetched appointments:', response.data);
       setAppointments(response.data);
     } catch (error) {
@@ -53,7 +53,7 @@ const DoctorPortal = () => {
 
   const handleUpdateStatus = async (appointmentId, newStatus) => {
     try {
-      await api.put(`/appointments/${appointmentId}`, {
+      await apiNode.put(`/appointments/${appointmentId}`, {
         status: newStatus
       });
       toast.success('Appointment status updated');

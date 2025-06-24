@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiSpring from '../config/apiSpring';
 import { useNavigate } from 'react-router-dom';
 import NearbyDoctors from '../components/NearbyDoctors';
 import axios from 'axios';
@@ -70,7 +70,7 @@ const Appointments = () => {
     try {
       setLoading(true);
       const location = await getCurrentLocation();
-      const response = await api.get('/doctors/nearby', {
+      const response = await apiSpring.get('/doctors/nearby', {
         params: {
           latitude: location.latitude,
           longitude: location.longitude,
@@ -99,7 +99,7 @@ const Appointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await api.get('/appointments');
+      const response = await apiSpring.get('/appointments');
       setAppointments(response.data);
     } catch (err) {
       console.error('Error fetching appointments:', err);

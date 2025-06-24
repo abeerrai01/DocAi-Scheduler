@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -31,7 +31,7 @@ const Login = () => {
     try {
       if (formData.role === 'hospital') {
         // Hospital login
-        const response = await api.post('/auth/login-hospital', {
+        const response = await apiNode.post('/auth/login-hospital', {
           hospitalId: formData.hospitalId,
           password: formData.password
         });
@@ -43,7 +43,7 @@ const Login = () => {
         return;
       }
       // Patient/Doctor login
-      const response = await api.post('/auth/login', formData);
+      const response = await apiNode.post('/auth/login', formData);
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify({ ...user, id: user._id }));

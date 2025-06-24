@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -18,7 +18,7 @@ const Navbar = () => {
 
   const fetchAvailability = async () => {
     try {
-      const response = await api.get(`/doctors/${user.id}/availability`);
+      const response = await apiNode.get(`/doctors/${user.id}/availability`);
       setIsAvailable(response.data.isAvailable);
     } catch (error) {
       console.error('Error fetching availability:', error);
@@ -27,7 +27,7 @@ const Navbar = () => {
 
   const handleAvailabilityToggle = async () => {
     try {
-      const response = await api.put(`/doctors/${user.id}/availability`, {
+      const response = await apiNode.put(`/doctors/${user.id}/availability`, {
         isAvailable: !isAvailable
       });
       setIsAvailable(response.data.isAvailable);

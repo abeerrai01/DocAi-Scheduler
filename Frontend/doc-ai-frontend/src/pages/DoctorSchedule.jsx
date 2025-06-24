@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../config/api';
+import apiNode from '../config/apiNode';
 
 const DoctorSchedule = () => {
   const { user } = useAuth();
@@ -17,7 +17,7 @@ const DoctorSchedule = () => {
 
   const fetchSchedule = async () => {
     try {
-      const response = await api.get('/doctors/schedule');
+      const response = await apiNode.get('/doctors/schedule');
       setSchedule(response.data);
       setLoading(false);
     } catch (error) {
@@ -30,7 +30,7 @@ const DoctorSchedule = () => {
   const handleAddSlot = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/doctors/schedule', {
+      await apiNode.post('/doctors/schedule', {
         date: selectedDate,
         time: selectedTime,
         duration
@@ -47,7 +47,7 @@ const DoctorSchedule = () => {
 
   const handleDeleteSlot = async (slotId) => {
     try {
-      await api.delete(`/doctors/schedule/${slotId}`);
+      await apiNode.delete(`/doctors/schedule/${slotId}`);
       fetchSchedule();
     } catch (error) {
       console.error('Error deleting slot:', error);
