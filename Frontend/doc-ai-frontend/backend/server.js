@@ -8,6 +8,7 @@ require('dotenv').config();
 const User = require('./models/User');
 const Appointment = require('./models/Appointment');
 const Profile = require('./models/Profile');
+const Hospital = require('./models/Hospital');
 
 const app = express();
 
@@ -225,6 +226,79 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 });
 
 // =========================
+// ✅ Hospital Auth Routes
+// =========================
+
+// Hospital Registration
+app.post('/api/auth/register-hospital', async (req, res) => {
+  try {
+    const { name, hospitalId, password, address, ambulances } = req.body;
+    if (!name || !hospitalId || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+    const existing = await Hospital.findOne({ hospitalId });
+    if (existing) {
+      return res.status(400).json({ message: 'Hospital ID already exists' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const hospital = new Hospital({
+      name,
+      hospitalId,
+      password: hashedPassword,
+      address,
+      ambulances: ambulances || { total: 0, available: 0 }
+    });
+    await hospital.save();
+    const token = jwt.sign({ hospitalId: hospital._id, role: 'hospital' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.status(201).json({
+      token,
+      hospital: {
+        _id: hospital._id,
+        name: hospital.name,
+        hospitalId: hospital.hospitalId,
+        address: hospital.address,
+        ambulances: hospital.ambulances
+      }
+    });
+  } catch (error) {
+    console.error('Hospital registration error:', error);
+    res.status(500).json({ message: 'Error registering hospital' });
+  }
+});
+
+// Hospital Login
+app.post('/api/auth/login-hospital', async (req, res) => {
+  try {
+    const { hospitalId, password } = req.body;
+    if (!hospitalId || !password) {
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+    const hospital = await Hospital.findOne({ hospitalId });
+    if (!hospital) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const isValidPassword = await bcrypt.compare(password, hospital.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ hospitalId: hospital._id, role: 'hospital' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.json({
+      token,
+      hospital: {
+        _id: hospital._id,
+        name: hospital.name,
+        hospitalId: hospital.hospitalId,
+        address: hospital.address,
+        ambulances: hospital.ambulances
+      }
+    });
+  } catch (error) {
+    console.error('Hospital login error:', error);
+    res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+// =========================
 // ✅ Doctor & Appointment APIs
 // =========================
 
@@ -415,6 +489,46 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
   }
 
   res.json(profile);
+});
+
+// =========================
+// ✅ Hospital Dashboard Routes
+// =========================
+
+// Get doctors for a hospital
+app.get('/api/hospitals/:hospitalId/doctors', async (req, res) => {
+  try {
+    const hospital = await Hospital.findById(req.params.hospitalId).populate('doctors');
+    if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+    res.json(hospital.doctors);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching doctors' });
+  }
+});
+
+// Get ambulance info for a hospital
+app.get('/api/hospitals/:hospitalId/ambulances', async (req, res) => {
+  try {
+    const hospital = await Hospital.findById(req.params.hospitalId);
+    if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+    res.json(hospital.ambulances);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching ambulances' });
+  }
+});
+
+// Update ambulance availability for a hospital
+app.put('/api/hospitals/:hospitalId/ambulances', async (req, res) => {
+  try {
+    const { available } = req.body;
+    const hospital = await Hospital.findById(req.params.hospitalId);
+    if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+    hospital.ambulances.available = available;
+    await hospital.save();
+    res.json(hospital.ambulances);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating ambulances' });
+  }
 });
 
 // =========================

@@ -7,7 +7,8 @@ const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'patient'
+    role: 'patient',
+    hospitalId: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,36 +29,32 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('Attempting login with:', { ...formData, password: '***' });
-      
+      if (formData.role === 'hospital') {
+        // Hospital login
+        const response = await api.post('/auth/login-hospital', {
+          hospitalId: formData.hospitalId,
+          password: formData.password
+        });
+        const { token, hospital } = response.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({ ...hospital, id: hospital._id, role: 'hospital' }));
+        login(token, { ...hospital, id: hospital._id, role: 'hospital' });
+        navigate('/hospital-dashboard');
+        return;
+      }
+      // Patient/Doctor login
       const response = await api.post('/auth/login', formData);
-      console.log('Login response:', response.data);
-
       const { token, user } = response.data;
-      
-      // Store token and user data
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({
-        ...user,
-        id: user._id  // Add id field for backward compatibility
-      }));
-      
-      // Update auth context
-      login(token, {
-        ...user,
-        id: user._id  // Add id field for backward compatibility
-      });
-
-      // Redirect based on role
+      localStorage.setItem('user', JSON.stringify({ ...user, id: user._id }));
+      login(token, { ...user, id: user._id });
       if (user.role === 'doctor') {
         navigate('/doctor-dashboard');
       } else {
         navigate('/patient-dashboard');
       }
-
     } catch (err) {
       console.error('Login error:', err);
-      
       if (err.code === 'ERR_NETWORK') {
         setError('Unable to connect to the server. Please check your internet connection and try again.');
       } else if (err.response?.status === 401) {
@@ -94,40 +91,6 @@ const Login = () => {
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                 Login as
               </label>
@@ -141,9 +104,78 @@ const Login = () => {
                 >
                   <option value="patient">Patient</option>
                   <option value="doctor">Doctor</option>
+                  <option value="hospital">Hospital</option>
                 </select>
               </div>
             </div>
+
+            {formData.role === 'hospital' ? (
+              <>
+                <div>
+                  <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700">Hospital ID</label>
+                  <div className="mt-1">
+                    <input
+                      id="hospitalId"
+                      name="hospitalId"
+                      type="text"
+                      required
+                      value={formData.hospitalId}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                  <div className="mt-1">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                    Username
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="username"
+                      name="username"
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div>
               <button

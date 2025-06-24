@@ -15,7 +15,10 @@ const Register = () => {
     role: 'patient',
     pincode: '',
     specialization: '',
-    location: null
+    location: null,
+    hospitalId: '',
+    address: '',
+    ambulances: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -122,25 +125,39 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const result = await register({
-        username: formData.username,
-        password: formData.password,
-        name: formData.name,
-        age: parseInt(formData.age),
-        role: formData.role,
-        pincode: formData.pincode,
-        specialization: formData.role === 'doctor' ? formData.specialization : undefined,
-        location: formData.role === 'doctor' ? formData.location : undefined
-      });
+      let result;
+      if (formData.role === 'hospital') {
+        // Hospital registration
+        const response = await fetch('/api/auth/register-hospital', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            hospitalId: formData.hospitalId,
+            password: formData.password,
+            address: formData.address,
+            ambulances: { total: Number(formData.ambulances) || 0, available: Number(formData.ambulances) || 0 }
+          })
+        });
+        if (!response.ok) throw new Error((await response.json()).message || 'Registration failed');
+        result = await response.json();
+      } else {
+        // Patient/Doctor registration
+        result = await register({
+          username: formData.username,
+          password: formData.password,
+          name: formData.name,
+          age: parseInt(formData.age),
+          role: formData.role,
+          pincode: formData.pincode,
+          specialization: formData.role === 'doctor' ? formData.specialization : undefined,
+          location: formData.role === 'doctor' ? formData.location : undefined
+        });
+      }
 
-      // Show success message
       alert('Registration successful! Please login with your credentials.');
-      
-      // Log out the user
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
-      // Refresh the page and redirect to login
       window.location.href = '/login';
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -191,6 +208,7 @@ const Register = () => {
               >
                 <option value="patient">Patient</option>
                 <option value="doctor">Doctor</option>
+                <option value="hospital">Hospital</option>
               </select>
             </div>
 
@@ -245,6 +263,56 @@ const Register = () => {
                   )}
                 </div>
               </div>
+            )}
+
+            {formData.role === 'hospital' && (
+              <>
+                <div>
+                  <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700">Hospital ID</label>
+                  <input
+                    id="hospitalId"
+                    name="hospitalId"
+                    type="text"
+                    value={formData.hospitalId}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Hospital Name</label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
+                  <input
+                    id="address"
+                    name="address"
+                    type="text"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="ambulances" className="block text-sm font-medium text-gray-700">Number of Ambulances</label>
+                  <input
+                    id="ambulances"
+                    name="ambulances"
+                    type="number"
+                    min="0"
+                    value={formData.ambulances}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              </>
             )}
 
             <div>

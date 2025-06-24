@@ -14,6 +14,7 @@ import SymptomResults from './pages/SymptomResults';
 import Profile from './pages/Profile';
 import Disclaimer from './pages/Disclaimer';
 import AboutUs from './pages/AboutUs';
+import HospitalDashboard from './pages/HospitalDashboard';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -95,6 +96,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Hospital Route */}
+      <Route
+        path="/hospital-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['hospital']}>
+            <HospitalDashboard />
           </ProtectedRoute>
         }
       />
